@@ -28,9 +28,12 @@ If the -change flag is provide, then the list of arguments is interpreted as
 change numbers or IDs, and the latest revision from each of those changes is
 assumed.
 
-runtrybot GITHUB_USER and GITHUB_PAT environment variables to be set with your
-GitHub username and personal acccess token respectively. The personal access
-token need only have "Public Repo" scope.
+runtrybot requires GITHUB_USER and GITHUB_PAT environment variables to be set
+with your GitHub username and personal acccess token respectively. The personal
+access token only requires "public_repo" scope.
+
+Flags:
+
 `[1:])
 	flagSet.PrintDefaults()
 }
