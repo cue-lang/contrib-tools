@@ -18,7 +18,6 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/google/go-github/v31/github"
-	"github.com/kr/pretty"
 	"golang.org/x/build/gerrit"
 )
 
@@ -37,7 +36,7 @@ func mainerr() (err error) {
 	defer handleKnown(&err)
 
 	if err := flagSet.Parse(os.Args[1:]); err != nil {
-		return usageErr(err.Error())
+		return flagErr(err.Error())
 	}
 	r := &runner{}
 	r.run()
@@ -178,38 +177,43 @@ func (r *runner) triggerBuilds(revs []revision) {
 		wg.Add(1)
 		go func() {
 			var err error
-			defer func() {
-				handleKnown(&err)
-				errs.Add(err)
-				wg.Done()
-			}()
+
+			defer wg.Done()
+			defer errs.Add(&err)
+			defer handleKnown(&err)
 
 			in, err := r.gerrit.GetChange(context.Background(), rev.changeID, gerrit.QueryChangesOpt{
-				Fields: []string{"ALL_REVISIONS", "ALL_COMMITS"},
+				Fields: []string{"ALL_REVISIONS"},
 			})
 			check(err, "failed to get current revision information: %v", err)
-			fmt.Printf("in: %v\n", pretty.Sprint(in))
 
 			var ref string
 			var commit string
 			if rev.revision != "" {
 				ri, ok := in.Revisions[rev.revision]
 				if !ok {
-					check(fmt.Errorf("change %v does not know about revision %v", rev.changeID, rev.revision), "")
+					raise("change %v does not know about revision %v; did you forget to run git codereview mail?", rev.changeID, rev.revision)
 				}
 				ref = ri.Ref
-				commit = ri.Commit.CommitID
+				commit = rev.revision
 			} else {
 				// find the latest ref
-				var ris []gerrit.RevisionInfo
-				for _, ri := range in.Revisions {
-					ris = append(ris, ri)
+				type revInfoPair struct {
+					rev string
+					ri  gerrit.RevisionInfo
 				}
-				sort.Slice(ris, func(i, j int) bool {
-					return ris[i].PatchSetNumber < ris[j].PatchSetNumber
+				var revInfoPairs []revInfoPair
+				for rev, ri := range in.Revisions {
+					revInfoPairs = append(revInfoPairs, revInfoPair{
+						rev: rev,
+						ri:  ri,
+					})
+				}
+				sort.Slice(revInfoPairs, func(i, j int) bool {
+					return revInfoPairs[i].ri.PatchSetNumber < revInfoPairs[j].ri.PatchSetNumber
 				})
-				ref = ris[len(ris)-1].Ref
-				commit = ris[len(ris)-1].Commit.CommitID
+				ref = revInfoPairs[len(revInfoPairs)-1].ri.Ref
+				commit = revInfoPairs[len(revInfoPairs)-1].rev
 			}
 
 			payload, err := buildClientPayload(rev.changeID, ref, commit)
@@ -290,12 +294,12 @@ type errorList struct {
 	errs []error
 }
 
-func (e *errorList) Add(err error) {
-	if err == nil {
+func (e *errorList) Add(err *error) {
+	if *err == nil {
 		return
 	}
 	e.mu.Lock()
-	e.errs = append(e.errs, err)
+	e.errs = append(e.errs, *err)
 	e.mu.Unlock()
 }
 
