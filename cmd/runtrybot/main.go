@@ -45,7 +45,9 @@ func mainerr() (err error) {
 }
 
 func (r *runner) run() {
-	rep, err := git.PlainOpen(".")
+	rep, err := git.PlainOpenWithOptions(".", &git.PlainOpenOptions{
+		DetectDotGit: true,
+	})
 	check(err, "failed to find git repository: %v", err)
 
 	wt, err := rep.Worktree()
