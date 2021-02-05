@@ -1,0 +1,9 @@
+{
+  "event_type": "hello",
+  "client_payload": {
+    "type": "importpr",
+    "payload": {
+      "pr": 123
+    }
+  }
+}

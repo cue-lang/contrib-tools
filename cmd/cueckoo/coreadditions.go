@@ -12,11 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build tools
+// ****************************************************************
+// This file contains generally useful additions to the core package
+// ****************************************************************
 
-package tools
+package main
 
-import (
-	_ "cuelang.org/go/cmd/cue"
-	_ "honnef.co/go/tools/cmd/staticcheck"
-)
+import "fmt"
+
+func errcheck(err error) {
+	if err != nil {
+		panic(panicError{
+			Err: err,
+		})
+	}
+}
+
+func check(err error, format string, args ...interface{}) {
+	if err != nil {
+		raise(format, args...)
+	}
+}
+
+func raise(format string, args ...interface{}) {
+	panic(panicError{
+		Err: fmt.Errorf(format, args...),
+	})
+}

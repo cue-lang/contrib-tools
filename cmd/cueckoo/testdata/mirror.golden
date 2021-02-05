@@ -1,0 +1,7 @@
+{
+  "event_type": "hello",
+  "client_payload": {
+    "type": "mirror",
+    "payload": null
+  }
+}

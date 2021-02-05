@@ -1,0 +1,11 @@
+{
+  "event_type": "hello",
+  "client_payload": {
+    "type": "runtrybot",
+    "payload": {
+      "changeID": "change",
+      "ref": "ref",
+      "commit": "commit"
+    }
+  }
+}
