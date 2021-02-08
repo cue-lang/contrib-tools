@@ -17,7 +17,7 @@
 // cue/cmd/cmd. i.e. they are copy-pasted from cmd/cue
 // ****************************************************************
 
-package main
+package cmd
 
 import (
 	"bytes"

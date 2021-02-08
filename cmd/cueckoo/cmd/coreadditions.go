@@ -16,7 +16,7 @@
 // This file contains generally useful additions to the core package
 // ****************************************************************
 
-package main
+package cmd
 
 import "fmt"
 

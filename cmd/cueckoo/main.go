@@ -16,75 +16,11 @@
 package main
 
 import (
-	"context"
 	"os"
 
-	"cuelang.org/go/cue/errors"
-	"github.com/spf13/cobra"
+	"github.com/cue-sh/tools/cmd/cueckoo/cmd"
 )
 
 func main() {
-	os.Exit(Main())
-}
-
-// Main runs the cueckoo tool and returns the code for passing to os.Exit.
-//
-// We follow the same approach here as the cue command (as well as using the
-// using the same version of Cobra) for consistency. Panic is used as a
-// strategy for early-return from any running command.
-func Main() int {
-	cwd, _ := os.Getwd()
-	err := mainErr(context.Background(), os.Args[1:])
-	if err != nil {
-		if err != errPrintedError {
-			errors.Print(os.Stderr, err, &errors.Config{
-				Cwd: cwd,
-			})
-		}
-		return 1
-	}
-	return 0
-}
-
-func mainErr(ctx context.Context, args []string) (err error) {
-	defer recoverError(&err)
-	cmd, err := New(args)
-	if err != nil {
-		return err
-	}
-	return cmd.Run(ctx)
-}
-
-func New(args []string) (cmd *Command, err error) {
-	defer recoverError(&err)
-
-	cmd = newRootCmd()
-	rootCmd := cmd.root
-	if len(args) == 0 {
-		return cmd, nil
-	}
-	rootCmd.SetArgs(args)
-	return
-}
-
-func newRootCmd() *Command {
-	cmd := &cobra.Command{
-		Use:          "cueckoo",
-		Short:        "cueckoo is a development tool for working with the CUE project",
-		SilenceUsage: true,
-	}
-
-	c := &Command{Command: cmd, root: cmd}
-
-	subCommands := []*cobra.Command{
-		newRuntrybotCmd(c),
-		newMirrorCmd(c),
-		newImportPRCmd(c),
-	}
-
-	for _, sub := range subCommands {
-		cmd.AddCommand(sub)
-	}
-
-	return c
+	os.Exit(cmd.Main())
 }
