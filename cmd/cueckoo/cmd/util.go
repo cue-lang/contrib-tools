@@ -67,33 +67,43 @@ type config struct {
 	gerritClient *gerrit.Client
 }
 
-func loadConfig() *config {
+func loadConfig() (*config, error) {
 	var res config
 	rep, err := git.PlainOpenWithOptions(".", &git.PlainOpenOptions{
 		DetectDotGit: true,
 	})
-	check(err, "failed to find git repository: %v", err)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find git repository: %v", err)
+	}
 	res.repo = rep
 
 	wt, err := rep.Worktree()
-	check(err, "failed to get worktree: %v", err)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get worktree: %v", err)
+	}
 
 	cfg, err := codereviewcfg.Config(wt.Filesystem.Root())
-	check(err, "failed to load codereview config: %v", err)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load codereview config: %v", err)
+	}
 
 	gerritURL := cfg["gerrit"]
 	if gerritURL == "" {
-		raise("missing Gerrit server in codereview config")
+		return nil, fmt.Errorf("missing Gerrit server in codereview config")
 	}
 	githubURL := cfg["github"]
 	if githubURL == "" {
-		raise("missing GitHub server in codereview config")
+		return nil, fmt.Errorf("missing GitHub server in codereview config")
 	}
 	res.gerritURL, err = codereviewcfg.GerritURLToServer(gerritURL)
-	check(err, "failed to derived Gerrit server from %v: %v", gerritURL, err)
+	if err != nil {
+		return nil, fmt.Errorf("failed to derived Gerrit server from %v: %v", gerritURL, err)
+	}
 
 	res.githubOwner, res.githubRepo, err = codereviewcfg.GithubURLToParts(githubURL)
-	check(err, "failed to derive GitHub owner and repo from %v: %v", githubURL, err)
+	if err != nil {
+		return nil, fmt.Errorf("failed to derive GitHub owner and repo from %v: %v", githubURL, err)
+	}
 
 	auth := github.BasicAuthTransport{
 		Username: os.Getenv("GITHUB_USER"),
@@ -102,7 +112,7 @@ func loadConfig() *config {
 	res.githubClient = github.NewClient(auth.Client())
 	res.gerritClient = gerrit.NewClient(res.gerritURL, gerrit.NoAuth)
 
-	return &res
+	return &res, nil
 }
 
 func (c *config) triggerRepositoryDispatch(payload github.DispatchRequestOptions) error {

@@ -65,14 +65,15 @@ access token only requires "public_repo" scope.
 }
 
 func runtrybotDef(cmd *Command, args []string) error {
-	cfg := loadConfig()
+	cfg, err := loadConfig()
+	if err != nil {
+		return err
+	}
 	r := &runtrybot{
 		cmd: cmd,
 		cfg: cfg,
 	}
-	r.run()
-
-	return nil
+	return r.run()
 }
 
 var (
@@ -84,7 +85,7 @@ type runtrybot struct {
 	cfg *config
 }
 
-func (r *runtrybot) run() {
+func (r *runtrybot) run() (err error) {
 	var changeIDs []revision
 	args := make(map[string]bool)
 	for _, a := range r.cmd.Flags().Args() {
@@ -92,7 +93,7 @@ func (r *runtrybot) run() {
 	}
 	if flagChange.Bool(r.cmd) {
 		if len(args) == 0 {
-			raise("must provide at least one change number of ID")
+			return fmt.Errorf("must provide at least one change number of ID")
 		}
 		for a := range args {
 			changeIDs = append(changeIDs, revision{
@@ -100,9 +101,12 @@ func (r *runtrybot) run() {
 			})
 		}
 	} else {
-		changeIDs = r.deriveChangeIDs(args)
+		changeIDs, err = r.deriveChangeIDs(args)
+		if err != nil {
+			return err
+		}
 	}
-	r.triggerBuilds(changeIDs)
+	return r.triggerBuilds(changeIDs)
 }
 
 // deriveChangeIDs determines a list of change IDs for the supplied args
@@ -112,46 +116,52 @@ func (r *runtrybot) run() {
 //
 // https://pkg.go.dev/golang.org/x/review/git-codereview
 //
-func (r *runtrybot) deriveChangeIDs(args map[string]bool) (res []revision) {
+func (r *runtrybot) deriveChangeIDs(args map[string]bool) (res []revision, err error) {
 	// Work out the branchpoint
 	var bp, bpStderr bytes.Buffer
 	bpCmd := exec.Command("git", "codereview", "branchpoint")
 	bpCmd.Stdout = &bp
 	bpCmd.Stderr = &bpStderr
-	err := bpCmd.Run()
-	check(err, "failed to run [%v]: %v\n%s", strings.Join(bpCmd.Args, " "), err, bpStderr.String())
+	if err := bpCmd.Run(); err != nil {
+		return nil, fmt.Errorf("failed to run [%v]: %v\n%s", strings.Join(bpCmd.Args, " "), err, bpStderr.String())
+	}
 
 	// Calculate the list of commits that are pending
 	var commitList, clStderr bytes.Buffer
 	logCmd := exec.Command("git", "log", "--pretty=format:%H", "--no-patch", fmt.Sprintf("%s..HEAD", bytes.TrimSpace(bp.Bytes())))
 	logCmd.Stdout = &commitList
 	logCmd.Stderr = &clStderr
-	err = logCmd.Run()
-	check(err, "failed to run [%v]: %v\n%s", strings.Join(logCmd.Args, " "), err, clStderr.String())
+	if err := logCmd.Run(); err != nil {
+		return nil, fmt.Errorf("failed to run [%v]: %v\n%s", strings.Join(logCmd.Args, " "), err, clStderr.String())
+	}
 
 	var pendingCommits []*object.Commit
 	for _, line := range strings.Split(string(commitList.String()), "\n") {
 		h := strings.TrimSpace(line)
 		commit, err := r.cfg.repo.CommitObject(plumbing.NewHash(h))
-		check(err, "failed to derive commit from %q: %v", h, err)
+		if err != nil {
+			return nil, fmt.Errorf("failed to derive commit from %q: %v", h, err)
+		}
 		pendingCommits = append(pendingCommits, commit)
 	}
 
 	if len(pendingCommits) == 0 {
-		raise("no pending commits")
+		return nil, fmt.Errorf("no pending commits")
 	}
 	if args["HEAD"] && len(args) > 1 {
-		raise("HEAD can only be supplied as an argument by itself")
+		return nil, fmt.Errorf("HEAD can only be supplied as an argument by itself")
 	}
 	if !args["HEAD"] && len(pendingCommits) > 1 && len(args) == 0 {
-		raise("must specify commits as arguments or use HEAD for everything")
+		return nil, fmt.Errorf("must specify commits as arguments or use HEAD for everything")
 	}
 	if args["HEAD"] || len(args) == 0 && len(pendingCommits) == 1 {
 		// Verify all
 
 		for _, pc := range pendingCommits {
 			changeID, err := getChangeIDFromCommitMsg(pc.Message)
-			check(err, "failed to derive change ID: %v", err)
+			if err != nil {
+				return nil, fmt.Errorf("failed to derive change ID: %v", err)
+			}
 
 			res = append(res, revision{
 				changeID: changeID,
@@ -164,11 +174,15 @@ func (r *runtrybot) deriveChangeIDs(args map[string]bool) (res []revision) {
 		for h := range args {
 			// Resolve the arg and ensure we have a matching pending commit
 			commit, err := r.cfg.repo.CommitObject(plumbing.NewHash(h))
-			check(err, "failed to derive commit from %q: %v", h, err)
+			if err != nil {
+				return nil, fmt.Errorf("failed to derive commit from %q: %v", h, err)
+			}
 			for _, pc := range pendingCommits {
 				if commit.Hash == pc.Hash {
 					changeID, err := getChangeIDFromCommitMsg(pc.Message)
-					check(err, "failed to derive change ID: %v", err)
+					if err != nil {
+						return nil, fmt.Errorf("failed to derive change ID: %v", err)
+					}
 
 					res = append(res, revision{
 						changeID: changeID,
@@ -177,7 +191,7 @@ func (r *runtrybot) deriveChangeIDs(args map[string]bool) (res []revision) {
 					continue EachArg
 				}
 			}
-			raise("commit %v is not a pending commit", h)
+			return nil, fmt.Errorf("commit %v is not a pending commit", h)
 		}
 	}
 	return
@@ -188,7 +202,7 @@ type revision struct {
 	revision string
 }
 
-func (r *runtrybot) triggerBuilds(revs []revision) {
+func (r *runtrybot) triggerBuilds(revs []revision) error {
 	errs := new(errorList)
 	var wg sync.WaitGroup
 
@@ -197,12 +211,10 @@ func (r *runtrybot) triggerBuilds(revs []revision) {
 		wg.Add(1)
 		go func() {
 			var err error
-
 			defer wg.Done()
 			defer errs.Add(&err)
 			defer recoverError(&err)
-
-			r.triggerBuild(rev)
+			err = r.triggerBuild(rev)
 		}()
 	}
 
@@ -212,22 +224,25 @@ func (r *runtrybot) triggerBuilds(revs []revision) {
 		for _, e := range errs.errs {
 			msgs = append(msgs, e.Error())
 		}
-		raise(strings.Join(msgs, "\n"))
+		return fmt.Errorf(strings.Join(msgs, "\n"))
 	}
+	return nil
 }
 
-func (r *runtrybot) triggerBuild(rev revision) {
+func (r *runtrybot) triggerBuild(rev revision) error {
 	in, err := r.cfg.gerritClient.GetChange(context.Background(), rev.changeID, gerrit.QueryChangesOpt{
 		Fields: []string{"ALL_REVISIONS"},
 	})
-	check(err, "failed to get current revision information: %v", err)
+	if err != nil {
+		return fmt.Errorf("failed to get current revision information: %v", err)
+	}
 
 	var ref string
 	var commit string
 	if rev.revision != "" {
 		ri, ok := in.Revisions[rev.revision]
 		if !ok {
-			raise("change %v does not know about revision %v; did you forget to run git codereview mail?", rev.changeID, rev.revision)
+			return fmt.Errorf("change %v does not know about revision %v; did you forget to run git codereview mail?", rev.changeID, rev.revision)
 		}
 		ref = ri.Ref
 		commit = rev.revision
@@ -257,9 +272,10 @@ func (r *runtrybot) triggerBuild(rev revision) {
 		Ref:      ref,
 		Commit:   commit,
 	})
-	errcheck(err)
-	err = r.cfg.triggerRepositoryDispatch(payload)
-	errcheck(err)
+	if err != nil {
+		return err
+	}
+	return r.cfg.triggerRepositoryDispatch(payload)
 }
 
 type runtrybotPayload struct {
