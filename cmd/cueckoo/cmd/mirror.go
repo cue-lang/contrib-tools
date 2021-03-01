@@ -30,7 +30,7 @@ func newMirrorCmd(c *Command) *cobra.Command {
 }
 
 func mirrorDef(c *Command, args []string) error {
-	cfg, err := loadConfig()
+	cfg, err := loadConfig(targetGitHub)
 	if err != nil {
 		return err
 	}

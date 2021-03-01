@@ -33,7 +33,7 @@ func newImportPRCmd(c *Command) *cobra.Command {
 }
 
 func importPRDef(c *Command, args []string) error {
-	cfg, err := loadConfig()
+	cfg, err := loadConfig(targetGitHub)
 	if err != nil {
 		return err
 	}

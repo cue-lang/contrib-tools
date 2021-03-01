@@ -35,7 +35,7 @@ func TestPayloads(t *testing.T) {
 		return dro
 	}
 	testCases := map[string]github.DispatchRequestOptions{
-		"runtrybot": must(buildRuntrybotPayload("hello", runtrybotPayload{
+		"runtrybot": must(buildRunTryBotPayload(clTriggerPayload{
 			ChangeID: "change",
 			Ref:      "ref",
 			Commit:   "commit",
@@ -43,6 +43,14 @@ func TestPayloads(t *testing.T) {
 		"mirror": must(buildMirrorPayload("hello")),
 		"importpr": must(buildImportPRPayload("hello", importPRPayload{
 			PR: 123,
+		})),
+		"unity_versions": must(buildUnityPayload("hello", unityPayload{
+			Versions: "\"v0.3.0-beta.5\"",
+		})),
+		"unity_cl": must(buildUnityPayloadFromCLTrigger(clTriggerPayload{
+			ChangeID: "change",
+			Ref:      "ref",
+			Commit:   "commit",
 		})),
 	}
 

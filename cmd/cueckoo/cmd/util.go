@@ -36,6 +36,14 @@ const (
 	eventTypeRuntrybot eventType = "runtrybot"
 	eventTypeMirror    eventType = "mirror"
 	eventTypeImportPR  eventType = "importpr"
+	eventTypeUnity     eventType = "unity"
+)
+
+type target string
+
+const (
+	targetGitHub target = "github"
+	targetUnity  target = "cue-unity"
 )
 
 type repositoryDispatchPayload struct {
@@ -67,7 +75,9 @@ type config struct {
 	gerritClient *gerrit.Client
 }
 
-func loadConfig() (*config, error) {
+// loadConfig loads the repository configuration from codereview.cfg, using
+// gh as the key to find the relevant GitHub information
+func loadConfig(gh target) (*config, error) {
 	var res config
 	rep, err := git.PlainOpenWithOptions(".", &git.PlainOpenOptions{
 		DetectDotGit: true,
@@ -91,10 +101,11 @@ func loadConfig() (*config, error) {
 	if gerritURL == "" {
 		return nil, fmt.Errorf("missing Gerrit server in codereview config")
 	}
-	githubURL := cfg["github"]
+	githubURL := cfg[string(gh)]
 	if githubURL == "" {
 		return nil, fmt.Errorf("missing GitHub server in codereview config")
 	}
+
 	res.gerritURL, err = codereviewcfg.GerritURLToServer(gerritURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to derived Gerrit server from %v: %v", gerritURL, err)
