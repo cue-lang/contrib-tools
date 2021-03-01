@@ -30,13 +30,20 @@ func newMirrorCmd(c *Command) *cobra.Command {
 }
 
 func mirrorDef(c *Command, args []string) error {
-	cfg := loadConfig()
+	cfg, err := loadConfig()
+	if err != nil {
+		return err
+	}
 
 	msg := "Mirror Gerrit to GitHub"
 	payload, err := buildMirrorPayload(msg)
-	errcheck(err)
+	if err != nil {
+		return err
+	}
 	err = cfg.triggerRepositoryDispatch(payload)
-	errcheck(err)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

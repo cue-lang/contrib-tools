@@ -33,16 +33,19 @@ func newImportPRCmd(c *Command) *cobra.Command {
 }
 
 func importPRDef(c *Command, args []string) error {
-	cfg := loadConfig()
+	cfg, err := loadConfig()
+	if err != nil {
+		return err
+	}
 
 	if len(args) != 1 {
-		raise("expected a single PR number")
+		return fmt.Errorf("expected a single PR number")
 	}
 
 	pr, err := strconv.Atoi(args[0])
 
 	if err != nil || pr <= 0 {
-		raise("%q is not a valid number", pr)
+		return fmt.Errorf("%q is not a valid number", pr)
 	}
 
 	// TODO: validate that the number provided is indeed a valid PR
@@ -53,9 +56,13 @@ func importPRDef(c *Command, args []string) error {
 	payload, err := buildImportPRPayload(msg, importPRPayload{
 		PR: pr,
 	})
-	errcheck(err)
+	if err != nil {
+		return err
+	}
 	err = cfg.triggerRepositoryDispatch(payload)
-	errcheck(err)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
