@@ -1,5 +1,5 @@
 {
-  "event_type": "hello",
+  "event_type": "trybot run for ref",
   "client_payload": {
     "type": "runtrybot",
     "payload": {

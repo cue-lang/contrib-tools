@@ -75,6 +75,7 @@ func newRootCmd() *Command {
 		newRuntrybotCmd(c),
 		newMirrorCmd(c),
 		newImportPRCmd(c),
+		newUnityCmd(c),
 	}
 
 	for _, sub := range subCommands {
