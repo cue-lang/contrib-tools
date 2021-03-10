@@ -33,7 +33,7 @@ func newImportPRCmd(c *Command) *cobra.Command {
 }
 
 func importPRDef(c *Command, args []string) error {
-	cfg, err := loadConfig(targetGitHub)
+	cfg, err := loadConfig()
 	if err != nil {
 		return err
 	}
@@ -59,7 +59,7 @@ func importPRDef(c *Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	err = cfg.triggerRepositoryDispatch(payload)
+	err = cfg.triggerRepositoryDispatch(cfg.githubOwner, cfg.githubRepo, payload)
 	if err != nil {
 		return err
 	}

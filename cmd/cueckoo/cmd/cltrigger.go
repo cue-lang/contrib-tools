@@ -26,7 +26,6 @@ import (
 
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
-	"github.com/google/go-github/v31/github"
 	"golang.org/x/build/gerrit"
 )
 
@@ -34,7 +33,7 @@ var (
 	changeIDRegex = regexp.MustCompile(`(?m)^Change-Id: (.*)$`)
 )
 
-type builder func(payload clTriggerPayload) (github.DispatchRequestOptions, error)
+type builder func(payload clTriggerPayload) error
 
 type cltrigger struct {
 	cmd     *Command
@@ -231,15 +230,11 @@ func (c *cltrigger) triggerBuild(rev revision) error {
 		commit = revInfoPairs[len(revInfoPairs)-1].rev
 	}
 
-	payload, err := c.builder(clTriggerPayload{
+	return c.builder(clTriggerPayload{
 		ChangeID: rev.changeID,
 		Ref:      ref,
 		Commit:   commit,
 	})
-	if err != nil {
-		return err
-	}
-	return c.cfg.triggerRepositoryDispatch(payload)
 }
 
 type clTriggerPayload struct {
