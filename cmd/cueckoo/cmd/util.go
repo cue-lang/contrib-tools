@@ -39,13 +39,6 @@ const (
 	eventTypeUnity     eventType = "unity"
 )
 
-type target string
-
-const (
-	targetGitHub target = "github"
-	targetUnity  target = "cue-unity"
-)
-
 type repositoryDispatchPayload struct {
 	Type    eventType   `json:"type"`
 	Payload interface{} `json:"payload"`
@@ -68,6 +61,12 @@ type config struct {
 	// githubRepo is the name of the GitHub repo
 	githubRepo string
 
+	// unityOwner is the organisation/user to which the unity repo belongs
+	unityOwner string
+
+	// unityRepo is the name of the unity repo
+	unityRepo string
+
 	// githubClient is the client for using the GitHub API
 	githubClient *github.Client
 
@@ -77,7 +76,7 @@ type config struct {
 
 // loadConfig loads the repository configuration from codereview.cfg, using
 // gh as the key to find the relevant GitHub information
-func loadConfig(gh target) (*config, error) {
+func loadConfig() (*config, error) {
 	var res config
 	rep, err := git.PlainOpenWithOptions(".", &git.PlainOpenOptions{
 		DetectDotGit: true,
@@ -101,9 +100,13 @@ func loadConfig(gh target) (*config, error) {
 	if gerritURL == "" {
 		return nil, fmt.Errorf("missing Gerrit server in codereview config")
 	}
-	githubURL := cfg[string(gh)]
+	githubURL := cfg["github"]
 	if githubURL == "" {
-		return nil, fmt.Errorf("missing GitHub server in codereview config")
+		return nil, fmt.Errorf("missing GitHub repo in codereview config")
+	}
+	unityURL := cfg["cue-unity"]
+	if unityURL == "" {
+		return nil, fmt.Errorf("missing unity repo in codereview config")
 	}
 
 	res.gerritURL, err = codereviewcfg.GerritURLToServer(gerritURL)
@@ -114,6 +117,10 @@ func loadConfig(gh target) (*config, error) {
 	res.githubOwner, res.githubRepo, err = codereviewcfg.GithubURLToParts(githubURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to derive GitHub owner and repo from %v: %v", githubURL, err)
+	}
+	res.unityOwner, res.unityRepo, err = codereviewcfg.GithubURLToParts(unityURL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to derive unity owner and repo from %v: %v", unityURL, err)
 	}
 
 	auth := github.BasicAuthTransport{
@@ -126,8 +133,8 @@ func loadConfig(gh target) (*config, error) {
 	return &res, nil
 }
 
-func (c *config) triggerRepositoryDispatch(payload github.DispatchRequestOptions) error {
-	_, resp, err := c.githubClient.Repositories.Dispatch(context.Background(), c.githubOwner, c.githubRepo, payload)
+func (c *config) triggerRepositoryDispatch(owner, repo string, payload github.DispatchRequestOptions) error {
+	_, resp, err := c.githubClient.Repositories.Dispatch(context.Background(), owner, repo, payload)
 	if err != nil {
 		return fmt.Errorf("failed to send dispatch event: %v", err)
 	}

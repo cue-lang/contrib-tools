@@ -24,7 +24,7 @@ import (
 )
 
 const (
-	flagUnityNormal flagName = "normal"
+	flagUnityVersions flagName = "versions"
 )
 
 // newUnityCmd creates a new unity command
@@ -51,19 +51,24 @@ access token only requires "public_repo" scope.
 `,
 		RunE: mkRunE(c, unityDef),
 	}
-	cmd.Flags().Bool(string(flagUnityNormal), false, "pass arguments to unity as versions")
+	cmd.Flags().Bool(string(flagChange), false, "interpret arguments as change numbers or IDs")
+	cmd.Flags().Bool(string(flagUnityVersions), false, "pass arguments to unity as versions")
 	return cmd
 }
 
 func unityDef(cmd *Command, args []string) error {
-	cfg, err := loadConfig(targetUnity)
+	cfg, err := loadConfig()
 	if err != nil {
 		return err
 	}
 
+	if flagUnityVersions.Bool(cmd) && flagChange.Bool(cmd) {
+		return fmt.Errorf("cannot supply --change and --versions")
+	}
+
 	// If we are passed --normal, interpret all args as versions to be passed to
 	// unity
-	if flagUnityNormal.Bool(cmd) {
+	if flagUnityVersions.Bool(cmd) {
 		for i, a := range args {
 			args[i] = strconv.Quote(a)
 		}
@@ -73,12 +78,21 @@ func unityDef(cmd *Command, args []string) error {
 		if err != nil {
 			return err
 		}
-		return cfg.triggerRepositoryDispatch(payload)
+		return cfg.triggerRepositoryDispatch(cfg.unityOwner, cfg.unityRepo, payload)
 	}
 
 	// Interpret as a request to test CLs
 
-	r := newCLTrigger(cmd, cfg, buildUnityPayloadFromCLTrigger)
+	r := newCLTrigger(cmd, cfg, func(payload clTriggerPayload) error {
+		p, err := buildUnityPayloadFromCLTrigger(payload)
+		if err != nil {
+			return err
+		}
+		if err := cfg.triggerRepositoryDispatch(cfg.unityOwner, cfg.unityRepo, p); err != nil {
+			return err
+		}
+		return nil
+	})
 	return r.run()
 }
 

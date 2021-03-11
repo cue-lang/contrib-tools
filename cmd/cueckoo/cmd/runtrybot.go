@@ -22,7 +22,8 @@ import (
 )
 
 const (
-	flagChange flagName = "change"
+	flagChange           flagName = "change"
+	flagRunTrybotNoUnity flagName = "nounity"
 )
 
 // newRuntrybotCmd creates a new runtrybot command
@@ -33,7 +34,9 @@ func newRuntrybotCmd(c *Command) *cobra.Command {
 		Long: `
 Usage of runtrybot:
 
-	runtrybot [--change] [ARGS...]
+	runtrybot [--change] [--nounity] [ARGS...]
+
+Triggers trybot and unity runs for its arguments.
 
 When run with no arguments, runtrybot derives a revision and change ID for each
 pending commit in the current branch. If multiple pending commits are found,
@@ -47,19 +50,40 @@ assumed.
 runtrybot requires GITHUB_USER and GITHUB_PAT environment variables to be set
 with your GitHub username and personal acccess token respectively. The personal
 access token only requires "public_repo" scope.
+
+If the --nounity flag is provided, only a trybot run is triggered.
 `,
 		RunE: mkRunE(c, runtrybotDef),
 	}
 	cmd.Flags().Bool(string(flagChange), false, "interpret arguments as change numbers or IDs")
+	cmd.Flags().Bool(string(flagRunTrybotNoUnity), false, "do not simultaenously trigger unity build")
 	return cmd
 }
 
 func runtrybotDef(cmd *Command, args []string) error {
-	cfg, err := loadConfig(targetGitHub)
+	cfg, err := loadConfig()
 	if err != nil {
 		return err
 	}
-	r := newCLTrigger(cmd, cfg, buildRunTryBotPayload)
+	r := newCLTrigger(cmd, cfg, func(payload clTriggerPayload) error {
+		p, err := buildRunTryBotPayload(payload)
+		if err != nil {
+			return err
+		}
+		if err := cfg.triggerRepositoryDispatch(cfg.githubOwner, cfg.githubRepo, p); err != nil {
+			return err
+		}
+		if !flagRunTrybotNoUnity.Bool(cmd) {
+			p, err := buildUnityPayloadFromCLTrigger(payload)
+			if err != nil {
+				return err
+			}
+			if err := cfg.triggerRepositoryDispatch(cfg.unityOwner, cfg.unityRepo, p); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 	return r.run()
 }
 
