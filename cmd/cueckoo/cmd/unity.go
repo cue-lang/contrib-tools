@@ -69,10 +69,11 @@ func unityDef(cmd *Command, args []string) error {
 	// If we are passed --normal, interpret all args as versions to be passed to
 	// unity
 	if flagUnityVersions.Bool(cmd) {
+		unquoted := strings.Join(args, " ")
 		for i, a := range args {
 			args[i] = strconv.Quote(a)
 		}
-		payload, err := buildUnityPayload("Normal unity run", unityPayload{
+		payload, err := buildUnityPayload(fmt.Sprintf("unity run for versions %s", unquoted), unityPayload{
 			Versions: strings.Join(args, " "),
 		})
 		if err != nil {
