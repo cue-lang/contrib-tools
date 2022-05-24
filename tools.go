@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build tools
 // +build tools
 
 package tools
 
 import (
 	_ "cuelang.org/go/cmd/cue"
-	_ "honnef.co/go/tools/cmd/staticcheck"
 )
