@@ -23,16 +23,16 @@ workflows: [
 
 #checkoutCode: {
 	name: "Checkout code"
-	uses: "actions/checkout@v2"
+	uses: "actions/checkout@v3"
 }
 #installGo: {
 	name: "Install Go"
-	uses: "actions/setup-go@v2"
+	uses: "actions/setup-go@v3"
 	with: "go-version": "${{ matrix.go_version }}"
 }
 
-_#ubuntuLatest: "ubuntu-18.04"
-_#latestGo:     "1.17.3"
+_#ubuntuLatest: "ubuntu-20.04"
+_#latestGo:     "1.18.x"
 
 test: json.#Workflow & {
 	name: "Test"
@@ -71,7 +71,7 @@ test: json.#Workflow & {
 			},
 			{
 				name: "staticcheck"
-				run:  "go run honnef.co/go/tools/cmd/staticcheck ./..."
+				run:  "go run honnef.co/go/tools/cmd/staticcheck@2022.1.2 ./..."
 			},
 			{
 				name: "Tidy"
