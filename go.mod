@@ -5,7 +5,6 @@ go 1.17
 require (
 	cuelang.org/go v0.4.3
 	github.com/go-git/go-git/v5 v5.4.2
-	github.com/google/go-cmp v0.5.8
 	github.com/google/go-github/v31 v31.0.0
 	github.com/shurcooL/graphql v0.0.0-20220520033453-bdb1221e171e
 	github.com/spf13/cobra v1.4.0
@@ -26,6 +25,7 @@ require (
 	github.com/go-git/go-billy/v5 v5.3.1 // indirect
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
+	github.com/google/go-cmp v0.5.8 // indirect
 	github.com/google/go-querystring v1.0.0 // indirect
 	github.com/google/uuid v1.2.0 // indirect
 	github.com/imdario/mergo v0.3.12 // indirect

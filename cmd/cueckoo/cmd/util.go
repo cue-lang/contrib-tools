@@ -55,6 +55,9 @@ type config struct {
 	// gerritURL is the URL of the Gerrit instance
 	gerritURL string
 
+	// githubURL is the URL for the GitHub repo
+	githubURL string
+
 	// githubOwner is the organisation/user to which the GitHub repo belongs
 	githubOwner string
 
@@ -108,6 +111,8 @@ func loadConfig() (*config, error) {
 	if unityURL == "" {
 		return nil, fmt.Errorf("missing unity repo in codereview config")
 	}
+
+	res.githubURL = githubURL
 
 	res.gerritURL, err = codereviewcfg.GerritURLToServer(gerritURL)
 	if err != nil {
