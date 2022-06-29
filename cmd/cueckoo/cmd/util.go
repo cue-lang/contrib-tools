@@ -103,29 +103,28 @@ func loadConfig() (*config, error) {
 	if gerritURL == "" {
 		return nil, fmt.Errorf("missing Gerrit server in codereview config")
 	}
-	githubURL := cfg["github"]
-	if githubURL == "" {
-		return nil, fmt.Errorf("missing GitHub repo in codereview config")
-	}
-	unityURL := cfg["cue-unity"]
-	if unityURL == "" {
-		return nil, fmt.Errorf("missing unity repo in codereview config")
-	}
-
-	res.githubURL = githubURL
-
 	res.gerritURL, err = codereviewcfg.GerritURLToServer(gerritURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to derived Gerrit server from %v: %v", gerritURL, err)
 	}
 
+	githubURL := cfg["github"]
+	if githubURL == "" {
+		return nil, fmt.Errorf("missing GitHub repo in codereview config")
+	}
+	res.githubURL = githubURL
 	res.githubOwner, res.githubRepo, err = codereviewcfg.GithubURLToParts(githubURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to derive GitHub owner and repo from %v: %v", githubURL, err)
 	}
-	res.unityOwner, res.unityRepo, err = codereviewcfg.GithubURLToParts(unityURL)
-	if err != nil {
-		return nil, fmt.Errorf("failed to derive unity owner and repo from %v: %v", unityURL, err)
+
+	// unity configuration is optional
+	unityURL := cfg["cue-unity"]
+	if unityURL != "" {
+		res.unityOwner, res.unityRepo, err = codereviewcfg.GithubURLToParts(unityURL)
+		if err != nil {
+			return nil, fmt.Errorf("failed to derive unity owner and repo from %v: %v", unityURL, err)
+		}
 	}
 
 	auth := github.BasicAuthTransport{
