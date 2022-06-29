@@ -73,7 +73,7 @@ func runtrybotDef(cmd *Command, args []string) error {
 		if err := cfg.triggerRepositoryDispatch(cfg.githubOwner, cfg.githubRepo, p); err != nil {
 			return err
 		}
-		if !flagRunTrybotNoUnity.Bool(cmd) {
+		if cfg.unityRepo != "" && !flagRunTrybotNoUnity.Bool(cmd) {
 			p, err := buildUnityPayloadFromCLTrigger(payload)
 			if err != nil {
 				return err
