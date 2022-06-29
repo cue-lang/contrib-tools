@@ -73,7 +73,6 @@ func newRootCmd() *Command {
 
 	subCommands := []*cobra.Command{
 		newRuntrybotCmd(c),
-		newMirrorCmd(c),
 		newImportPRCmd(c),
 		newUnityCmd(c),
 	}
