@@ -1,7 +1,7 @@
 {
   "event_type": "trybot run for ref",
   "client_payload": {
-    "type": "runtrybot",
+    "type": "trybot",
     "payload": {
       "changeID": "change",
       "ref": "ref",
