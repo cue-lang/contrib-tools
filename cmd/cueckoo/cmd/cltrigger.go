@@ -73,10 +73,9 @@ func (c *cltrigger) run() (err error) {
 	return c.triggerBuilds(changeIDs)
 }
 
-// deriveChangeIDs determines a list of change IDs for the supplied args
-// (if there are any). See the runtrybot docs for an explanation of what
-// is derived. Essentially however we try to follow the semantics of
-// git-codereview:
+// deriveChangeIDs determines a list of change IDs for the supplied args (if
+// there are any). See the trybot docs for an explanation of what is derived.
+// Essentially however we try to follow the semantics of git-codereview:
 //
 // https://pkg.go.dev/golang.org/x/review/git-codereview
 //

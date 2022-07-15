@@ -66,7 +66,7 @@ func runtrybotDef(cmd *Command, args []string) error {
 		return err
 	}
 	r := newCLTrigger(cmd, cfg, func(payload clTriggerPayload) error {
-		p, err := buildRunTryBotPayload(payload)
+		p, err := buildTryBotPayload(payload)
 		if err != nil {
 			return err
 		}
@@ -87,7 +87,7 @@ func runtrybotDef(cmd *Command, args []string) error {
 	return r.run()
 }
 
-func buildRunTryBotPayload(payload clTriggerPayload) (github.DispatchRequestOptions, error) {
+func buildTryBotPayload(payload clTriggerPayload) (github.DispatchRequestOptions, error) {
 	msg := fmt.Sprintf("trybot run for %v", payload.Ref)
-	return buildDispatchPayload(msg, eventTypeRuntrybot, payload)
+	return buildDispatchPayload(msg, eventTypeTrybot, payload)
 }

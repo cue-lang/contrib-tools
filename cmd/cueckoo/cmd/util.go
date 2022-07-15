@@ -33,10 +33,9 @@ import (
 type eventType string
 
 const (
-	eventTypeRuntrybot eventType = "runtrybot"
-	eventTypeMirror    eventType = "mirror"
-	eventTypeImportPR  eventType = "importpr"
-	eventTypeUnity     eventType = "unity"
+	eventTypeTrybot   eventType = "trybot"
+	eventTypeImportPR eventType = "importpr"
+	eventTypeUnity    eventType = "unity"
 )
 
 type repositoryDispatchPayload struct {

@@ -15,6 +15,7 @@
 package cmd
 
 import (
+	"bytes"
 	"encoding/json"
 	"flag"
 	"io/ioutil"
@@ -35,7 +36,7 @@ func TestPayloads(t *testing.T) {
 		return dro
 	}
 	testCases := map[string]github.DispatchRequestOptions{
-		"runtrybot": must(buildRunTryBotPayload(clTriggerPayload{
+		"runtrybot": must(buildTryBotPayload(clTriggerPayload{
 			ChangeID: "change",
 			Ref:      "ref",
 			Commit:   "commit",
@@ -61,6 +62,7 @@ func TestPayloads(t *testing.T) {
 			if err != nil {
 				t.Fatalf("failed to read golden file %s: %v", fn, err)
 			}
+			golden = bytes.TrimSpace(golden)
 			if !cmp.Equal(byts, golden) {
 				if !*fUpdate {
 					t.Fatalf("output did not match golden file:\n%s", cmp.Diff(byts, golden))
