@@ -80,6 +80,7 @@ func newRootCmd() *Command {
 		newRuntrybotCmd(c),
 		newImportPRCmd(c),
 		newUnityCmd(c),
+		newReleaselogCmd(c),
 	}
 
 	for _, sub := range subCommands {
