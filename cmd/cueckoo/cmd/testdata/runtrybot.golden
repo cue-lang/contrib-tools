@@ -5,7 +5,8 @@
     "payload": {
       "changeID": "change",
       "ref": "ref",
-      "commit": "commit"
+      "commit": "commit",
+      "branch": "branch"
     }
   }
 }

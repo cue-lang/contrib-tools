@@ -6,7 +6,8 @@
       "cl": {
         "changeID": "change",
         "ref": "ref",
-        "commit": "commit"
+        "commit": "commit",
+        "branch": "branch"
       },
       "versions": "\"ref\""
     }
