@@ -40,6 +40,7 @@ func TestPayloads(t *testing.T) {
 			ChangeID: "change",
 			Ref:      "ref",
 			Commit:   "commit",
+			Branch:   "branch",
 		})),
 		"unity_versions": must(buildUnityPayload("hello", unityPayload{
 			Versions: "\"v0.3.0-beta.5\"",
@@ -48,6 +49,7 @@ func TestPayloads(t *testing.T) {
 			ChangeID: "change",
 			Ref:      "ref",
 			Commit:   "commit",
+			Branch:   "branch",
 		})),
 	}
 

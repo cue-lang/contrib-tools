@@ -233,6 +233,7 @@ func (c *cltrigger) triggerBuild(rev revision) error {
 		ChangeID: rev.changeID,
 		Ref:      ref,
 		Commit:   commit,
+		Branch:   in.Branch,
 	})
 }
 
@@ -240,6 +241,7 @@ type clTriggerPayload struct {
 	ChangeID string `json:"changeID"`
 	Ref      string `json:"ref"`
 	Commit   string `json:"commit"`
+	Branch   string `json:"branch"`
 }
 
 func getChangeIDFromCommitMsg(msg string) (string, error) {
