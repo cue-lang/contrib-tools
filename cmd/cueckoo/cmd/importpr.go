@@ -49,21 +49,30 @@ func importPRDef(c *Command, args []string) error {
 		return fmt.Errorf("expected a single PR number")
 	}
 
-	pr, err := strconv.Atoi(args[0])
+	prNumber, err := strconv.Atoi(args[0])
 
-	if err != nil || pr <= 0 {
-		return fmt.Errorf("%q is not a valid number", pr)
+	if err != nil || prNumber <= 0 {
+		return fmt.Errorf("%q is not a valid number", prNumber)
 	}
 
 	log.Printf("using github remote URL %q", cfg.githubURL)
 
-	branchName := fmt.Sprintf("importpr-%d", pr)
+	branchName := fmt.Sprintf("importpr-%d", prNumber)
 
 	// TODO: Note that mainErr's ctx is not wired here.
 	// We should wire it up and use it for e.g. FetchContext.
 	// For now, use a hard-coded timeout of 10s.
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
+
+	pr, _, err := cfg.githubClient.PullRequests.Get(context.Background(), cfg.githubOwner, cfg.githubRepo, prNumber)
+	if err != nil {
+		return fmt.Errorf("could not get github PR: %v", err)
+	}
+	baseRef := pr.GetBase().GetRef()
+	if baseRef == "" {
+		return fmt.Errorf("PR seems to have an empty base branch?")
+	}
 
 	// If the branch already exists, refuse to continue.
 	if out, err := run(ctx,
@@ -79,7 +88,7 @@ func importPRDef(c *Command, args []string) error {
 	// Fetch the PR HEAD and place it in a new branch, then switch to it.
 	if _, err := run(ctx,
 		"git", "fetch", "--quiet", cfg.githubURL,
-		fmt.Sprintf("pull/%d/head:%s", pr, branchName),
+		fmt.Sprintf("pull/%d/head:%s", prNumber, branchName),
 	); err != nil {
 		return err
 	}
@@ -88,10 +97,10 @@ func importPRDef(c *Command, args []string) error {
 	}
 	log.Printf("fetched PR into branch %q", branchName)
 
-	// Rebase all the commits on the remote tip, squashing all commits after the
-	// oldest one. We fetch the latest tip from the remote via HEAD, in case the
-	// local clone is not up to date.
-	if _, err := run(ctx, "git", "fetch", "--quiet", cfg.githubURL, "HEAD"); err != nil {
+	// Rebase all the commits on the remote target branch, squashing all commits
+	// after the oldest one. We fetch the latest tip from the remote branch,
+	// in case the local clone is not up to date.
+	if _, err := run(ctx, "git", "fetch", "--quiet", cfg.githubURL, baseRef); err != nil {
 		return err
 	}
 	if _, err := run(ctx, "git",
@@ -99,6 +108,13 @@ func importPRDef(c *Command, args []string) error {
 		"-c", `sequence.editor=sed -i -e '2,$s/^pick/squash/'`,
 		"rebase", "--interactive", "FETCH_HEAD",
 	); err != nil {
+		return err
+	}
+	// TODO: note that we assume that the upstream github remote is "origin".
+	// We need to use a remote name in --set-upstream-to, so githubURL isn't enough.
+	// If others have git setups where the remotes are named differently,
+	// we can figure out a way to remove this assumption.
+	if _, err := run(ctx, "git", "branch", "--set-upstream-to", "origin/"+baseRef); err != nil {
 		return err
 	}
 	log.Printf("rebased and squashed on the latest remote tip")
@@ -129,7 +145,7 @@ func importPRDef(c *Command, args []string) error {
 	log.Printf("When you're happy with the commit, run: git-codereview mail")
 	log.Printf("Remember to ensure that the commit contains:")
 	log.Printf("\tFixes #N. (if it fixes an open issue)")
-	log.Printf("\tCloses #%d as merged.", pr)
+	log.Printf("\tCloses #%d as merged.", prNumber)
 	return nil
 }
 
