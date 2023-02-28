@@ -21,9 +21,14 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
+)
+
+const (
+	flagUpdate flagName = "update"
 )
 
 // newImportPRCmd creates a new importpr command
@@ -33,6 +38,7 @@ func newImportPRCmd(c *Command) *cobra.Command {
 		Short: "Import GitHub PRs to Gerrit",
 		RunE:  mkRunE(c, importPRDef),
 	}
+	cmd.Flags().Bool(string(flagUpdate), false, "rebase against the tip of the target branch")
 	return cmd
 }
 
@@ -85,6 +91,12 @@ func importPRDef(c *Command, args []string) error {
 		return err // something else went wrong
 	}
 
+	// TODO: note that we assume that the upstream github remote is "origin".
+	// We need to use a remote name in --set-upstream-to, so githubURL isn't enough.
+	// If others have git setups where the remotes are named differently,
+	// we can figure out a way to remove this assumption.
+	originBaseRef := "origin/" + baseRef
+
 	// Fetch the PR HEAD and place it in a new branch, then switch to it.
 	if _, err := run(ctx,
 		"git", "fetch", "--quiet", cfg.githubURL,
@@ -97,27 +109,41 @@ func importPRDef(c *Command, args []string) error {
 	}
 	log.Printf("fetched PR into branch %q", branchName)
 
-	// Rebase all the commits on the remote target branch, squashing all commits
-	// after the oldest one. We fetch the latest tip from the remote branch,
-	// in case the local clone is not up to date.
+	// Fetch the latest baseRef in order that we can rebase against it.
+	//
+	// In the default case we do not try to incorporate new commits from the
+	// target branch. That is, we simply use the rebase in order to squash the
+	// commits in the PR. The rebase happens against the merge-base with respect
+	// to baseRef.
+	//
+	// When the --update flag is passed, we perform the same rebase (to squash
+	// commits) but against the tip of the target branch instead of the merge
+	// base.
 	if _, err := run(ctx, "git", "fetch", "--quiet", cfg.githubURL, baseRef); err != nil {
 		return err
+	}
+	rebaseMsg := "tip of target branch"
+	rebasePoint := "FETCH_HEAD"
+	if !flagUpdate.Bool(c) {
+		// We need to work out the mergebase
+		out, err := run(ctx, "git", "merge-base", originBaseRef, branchName)
+		if err != nil {
+			return fmt.Errorf("failed to determine merge base %w", err)
+		}
+		rebaseMsg = "existing merge-base"
+		rebasePoint = strings.TrimSpace(out)
 	}
 	if _, err := run(ctx, "git",
 		"-c", "core.editor=cat",
 		"-c", `sequence.editor=sed -i -e '2,$s/^pick/squash/'`,
-		"rebase", "--interactive", "FETCH_HEAD",
+		"rebase", "--interactive", rebasePoint,
 	); err != nil {
 		return err
 	}
-	// TODO: note that we assume that the upstream github remote is "origin".
-	// We need to use a remote name in --set-upstream-to, so githubURL isn't enough.
-	// If others have git setups where the remotes are named differently,
-	// we can figure out a way to remove this assumption.
-	if _, err := run(ctx, "git", "branch", "--set-upstream-to", "origin/"+baseRef); err != nil {
+	if _, err := run(ctx, "git", "branch", "--set-upstream-to", originBaseRef); err != nil {
 		return err
 	}
-	log.Printf("rebased and squashed on the latest remote tip")
+	log.Printf("rebased and squashed on %s", rebaseMsg)
 
 	// TODO: fix up common commit message issues, especially when squashing, in Go code.
 	// TODO: automate adding "Closes #PR as merged.".
