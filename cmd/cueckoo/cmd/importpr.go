@@ -23,6 +23,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/spf13/cobra"
 )
@@ -109,6 +110,13 @@ func importPRDef(c *Command, args []string) error {
 	}
 	log.Printf("fetched PR into branch %q", branchName)
 
+	// Set the branch upstream as the first step. If subsequent commands fail
+	// (they shouldn't but it can happen) we still need the upstream to have
+	// been set.
+	if _, err := run(ctx, "git", "branch", "--set-upstream-to", originBaseRef); err != nil {
+		return err
+	}
+
 	// Fetch the latest baseRef in order that we can rebase against it.
 	//
 	// In the default case we do not try to incorporate new commits from the
@@ -140,13 +148,29 @@ func importPRDef(c *Command, args []string) error {
 	); err != nil {
 		return err
 	}
-	if _, err := run(ctx, "git", "branch", "--set-upstream-to", originBaseRef); err != nil {
-		return err
-	}
 	log.Printf("rebased and squashed on %s", rebaseMsg)
 
 	// TODO: fix up common commit message issues, especially when squashing, in Go code.
-	// TODO: automate adding "Closes #PR as merged.".
+
+	// Add "Closes #PR as merged." Not that running this command will also end
+	// up adding a Change-Id trailer if the user has git commit hooks set for
+	// post-commit. This means that the Changed-ID will be visible in the commit
+	// message when it comes to final human-edit of the commit message below.
+	msg, err := run(ctx, "git", "log", "--pretty=%B", "-1")
+	if err != nil {
+		return err
+	}
+	msg, err = addClosesMsg(msg, prNumber)
+	if err != nil {
+		return err
+	}
+	addClosesCmd := exec.CommandContext(context.Background(), "git", "commit", "--quiet", "--amend", "-F", "-")
+	addClosesCmd.Stdin = strings.NewReader(msg)
+	addClosesCmd.Stdout = os.Stdout
+	addClosesCmd.Stderr = os.Stderr
+	if err := addClosesCmd.Run(); err != nil {
+		return err
+	}
 
 	// TODO: add a header (Change-Id or GitOrigin-RevId? see
 	// https://cue-review.googlesource.com/c/cue/+/9781) to ensure that we don't
@@ -182,4 +206,52 @@ func run(ctx context.Context, name string, args ...string) (string, error) {
 		return "", fmt.Errorf("%v: %s", err, out)
 	}
 	return string(out), err
+}
+
+// addClosesMsg adds the message to "Closes #pr as merged." to the commit message
+// msg.  It respects trailers and leaves a newline at the end of the message.
+// Like git it respects the last block of trailers.
+//
+// There is probably a nice package somewhere for parsing the git commit
+// message into the constituent parts: pre-trailers, and trailers. For now
+// we brute force it based on the logic described in "man
+// git-interpret-trailers". If there are trailers we want to insert "Closes
+// #PR as merged." as the last clear line before the trailers. If there are
+// no trailers, it should be the final line in the commit message.
+func addClosesMsg(msg string, pr int) (string, error) {
+	// TODO: handle carriage returns?
+
+	// Drop any trailing space. We will add back a \n at the end
+	msg = strings.TrimRightFunc(msg, unicode.IsSpace)
+
+	// Find the trailers if there are any. Note that this will include a
+	// trailing \n which we will need to remove.
+	trailersCmd := exec.Command("git", "interpret-trailers", "--only-trailers", "--only-input", "--unfold")
+	trailersCmd.Stdin = strings.NewReader(msg)
+	trailersCmd.Stderr = os.Stderr
+	out, err := trailersCmd.Output()
+	if err != nil {
+		return "", err
+	}
+	trailersStr := strings.TrimSuffix(string(out), "\n")
+
+	// Remove the trailers suffix and trim any trailing space
+	msg = strings.TrimSuffix(msg, trailersStr)
+	msg = strings.TrimRightFunc(msg, unicode.IsSpace)
+
+	// Prepare the closes message
+	closes := fmt.Sprintf("Closes #%d as merged.", pr)
+
+	// Add the closes message
+	msg += "\n\n" + closes
+
+	// Add the trailers back if there were any
+	if trailersStr != "" {
+		msg += "\n\n" + trailersStr
+	}
+
+	// Add the trailing \n
+	msg += "\n"
+
+	return msg, nil
 }
