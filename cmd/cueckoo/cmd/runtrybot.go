@@ -51,6 +51,9 @@ runtrybot requires GITHUB_USER and GITHUB_PAT environment variables to be set
 with your GitHub username and personal acccess token respectively. The personal
 access token only requires "public_repo" scope.
 
+Note that the personal access token should be "classic"; GitHub's new
+fine-grained tokens are still in beta and haven't been tested to work here.
+
 If the --nounity flag is provided, only a trybot run is triggered.
 `,
 		RunE: mkRunE(c, runtrybotDef),
