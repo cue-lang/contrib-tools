@@ -126,14 +126,27 @@ func loadConfig() (*config, error) {
 		}
 	}
 
-	auth := github.BasicAuthTransport{
-		Username: os.Getenv("GITHUB_USER"),
-		Password: os.Getenv("GITHUB_PAT"),
+	var auth github.BasicAuthTransport
+	auth.Username, err = mustGetEnv("GITHUB_USER")
+	if err != nil {
+		return nil, err
+	}
+	auth.Password, err = mustGetEnv("GITHUB_USER")
+	if err != nil {
+		return nil, err
 	}
 	res.githubClient = github.NewClient(auth.Client())
 	res.gerritClient = gerrit.NewClient(res.gerritURL, gerrit.NoAuth)
 
 	return &res, nil
+}
+
+func mustGetEnv(name string) (string, error) {
+	val := os.Getenv(name)
+	if val == "" {
+		return "", fmt.Errorf("%s is required", name)
+	}
+	return val, nil
 }
 
 func (c *config) triggerRepositoryDispatch(owner, repo string, payload github.DispatchRequestOptions) error {
