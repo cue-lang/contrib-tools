@@ -17,6 +17,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"regexp"
 	"sort"
 	"strings"
@@ -114,6 +115,21 @@ func (c *cltrigger) deriveChangeIDs(args map[string]bool) (res []revision, err e
 		if err != nil {
 			return fmt.Errorf("failed to derive change ID: %v", err)
 		}
+		// If HEAD is tracking an origin remote branch,
+		// make the changeID include the project name and target branch,
+		// which will make the changeID string be an unique identifier.
+		// See [revision.changeID].
+		targetBranch, _ := run(ctx, "git", "rev-parse", "--abbrev-ref", "HEAD@{u}")
+		targetBranch = strings.TrimSpace(targetBranch)             // no trailing newline
+		targetBranch = strings.TrimPrefix(targetBranch, "origin/") // no remote name prefix
+		if targetBranch != "" {
+			changeID = url.PathEscape(
+				c.cfg.githubOwner + "/" + c.cfg.githubRepo +
+					"~" +
+					targetBranch +
+					"~" +
+					changeID)
+		}
 
 		res = append(res, revision{
 			changeID: changeID,
@@ -152,7 +168,21 @@ func (c *cltrigger) deriveChangeIDs(args map[string]bool) (res []revision, err e
 }
 
 type revision struct {
+	// changeID uniquely identifies a CL, per the documentation at
+	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-id.
+	//
+	// Usually, it will be one of:
+	//
+	// 1) 12345, a CL number
+	// 2) Ideadbeef123, from the Change-Id commit trailer
+	// 3) project~branch~Ideadbeef123, in case a Change-Id is ambiguous due to
+	//    backport cherry-pick CLs
+	//
+	// When deriving change IDs, we will always use the third form,
+	// as it is the only one which cannot result in ambiguous identifiers.
+	// However, the command-line UI accepts the three forms as direct arguments.
 	changeID string
+
 	revision string
 }
 
@@ -188,6 +218,8 @@ func (c *cltrigger) triggerBuild(rev revision) error {
 		Fields: []string{"ALL_REVISIONS"},
 	})
 	if err != nil {
+		// Note that this may be a "change not found" error when the changeID is
+		// an ambiguous identifier. See [revision.changeID].
 		return fmt.Errorf("failed to get current revision information: %v", err)
 	}
 
