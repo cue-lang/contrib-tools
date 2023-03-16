@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"net/url"
 	"regexp"
-	"sort"
 	"strings"
 	"sync"
 
@@ -223,38 +222,19 @@ func (c *cltrigger) triggerBuild(rev revision) error {
 		return fmt.Errorf("failed to get current revision information: %v", err)
 	}
 
-	var ref string
-	var commit string
-	if rev.revision != "" {
-		ri, ok := in.Revisions[rev.revision]
-		if !ok {
-			return fmt.Errorf("change %v does not know about revision %v; did you forget to run git codereview mail?", rev.changeID, rev.revision)
-		}
-		ref = ri.Ref
-		commit = rev.revision
-	} else {
-		// find the latest ref
-		type revInfoPair struct {
-			rev string
-			ri  gerrit.RevisionInfo
-		}
-		var revInfoPairs []revInfoPair
-		for rev, ri := range in.Revisions {
-			revInfoPairs = append(revInfoPairs, revInfoPair{
-				rev: rev,
-				ri:  ri,
-			})
-		}
-		sort.Slice(revInfoPairs, func(i, j int) bool {
-			return revInfoPairs[i].ri.PatchSetNumber < revInfoPairs[j].ri.PatchSetNumber
-		})
-		ref = revInfoPairs[len(revInfoPairs)-1].ri.Ref
-		commit = revInfoPairs[len(revInfoPairs)-1].rev
+	commit := rev.revision
+	if commit == "" {
+		// fall back to the current/latest revision
+		commit = in.CurrentRevision
+	}
+	revision, ok := in.Revisions[rev.revision]
+	if !ok {
+		return fmt.Errorf("change %v does not know about revision %v; did you forget to run git codereview mail?", rev.changeID, rev.revision)
 	}
 
 	return c.builder(clTriggerPayload{
 		ChangeID: rev.changeID,
-		Ref:      ref,
+		Ref:      revision.Ref,
 		Commit:   commit,
 		Branch:   in.Branch,
 	})
