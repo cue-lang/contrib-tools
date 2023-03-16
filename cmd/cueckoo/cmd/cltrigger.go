@@ -109,19 +109,24 @@ func (c *cltrigger) deriveChangeIDs(args map[string]bool) (res []revision, err e
 	if !args["HEAD"] && len(pendingCommits) > 1 && len(args) == 0 {
 		return nil, fmt.Errorf("must specify commits as arguments or use HEAD for everything")
 	}
+	addRevision := func(pc *object.Commit) error {
+		changeID, err := getChangeIDFromCommitMsg(pc.Message)
+		if err != nil {
+			return fmt.Errorf("failed to derive change ID: %v", err)
+		}
+
+		res = append(res, revision{
+			changeID: changeID,
+			revision: pc.Hash.String(),
+		})
+		return nil
+	}
 	if args["HEAD"] || len(args) == 0 && len(pendingCommits) == 1 {
 		// Verify all
-
 		for _, pc := range pendingCommits {
-			changeID, err := getChangeIDFromCommitMsg(pc.Message)
-			if err != nil {
-				return nil, fmt.Errorf("failed to derive change ID: %v", err)
+			if err := addRevision(pc); err != nil {
+				return nil, err
 			}
-
-			res = append(res, revision{
-				changeID: changeID,
-				revision: pc.Hash.String(),
-			})
 		}
 	} else {
 		// We verify each of the arguments
@@ -134,15 +139,9 @@ func (c *cltrigger) deriveChangeIDs(args map[string]bool) (res []revision, err e
 			}
 			for _, pc := range pendingCommits {
 				if commit.Hash == pc.Hash {
-					changeID, err := getChangeIDFromCommitMsg(pc.Message)
-					if err != nil {
-						return nil, fmt.Errorf("failed to derive change ID: %v", err)
+					if err := addRevision(pc); err != nil {
+						return nil, err
 					}
-
-					res = append(res, revision{
-						changeID: changeID,
-						revision: pc.Hash.String(),
-					})
 					continue EachArg
 				}
 			}
