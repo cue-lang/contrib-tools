@@ -78,6 +78,7 @@ func (c *cltrigger) run() (err error) {
 // Essentially however we try to follow the semantics of git-codereview:
 //
 // https://pkg.go.dev/golang.org/x/review/git-codereview
+//
 func (c *cltrigger) deriveChangeIDs(args map[string]bool) (res []revision, err error) {
 	// Work out the branchpoint
 	var bp, bpStderr bytes.Buffer
@@ -192,28 +193,12 @@ func (c *cltrigger) triggerBuilds(revs []revision) error {
 }
 
 func (c *cltrigger) triggerBuild(rev revision) error {
-	// Query for changes matching the Change-Id string rather than using the
-	// "get change" endpoint, because the latter requires that the Change-Id
-	// _uniquely_ identify one CL. That may not be the case in a backport CL,
-	// as the backport shares the same Change-Id as the original change.
-	//
-	// In that same backport CL scenario, we only want to run the trybots on the
-	// CL backporting the original change, not the original CL that was merged
-	// in the past, so also use "is:open" as part of the query.
-	query := fmt.Sprintf("change:%s is:open", rev.changeID)
-	changes, err := c.cfg.gerritClient.QueryChanges(context.Background(), query, gerrit.QueryChangesOpt{
+	in, err := c.cfg.gerritClient.GetChange(context.Background(), rev.changeID, gerrit.QueryChangesOpt{
 		Fields: []string{"ALL_REVISIONS"},
 	})
-	if len(changes) == 0 && err == nil {
-		err = fmt.Errorf("gerrit found no open CLs with that Change-Id")
-	}
-	if len(changes) > 1 && err == nil {
-		err = fmt.Errorf("gerrit found multiple open CLs with that Change-Id")
-	}
 	if err != nil {
-		return fmt.Errorf("failed to fetch gerrit CL by Change-Id %q: %v", rev.changeID, err)
+		return fmt.Errorf("failed to get current revision information: %v", err)
 	}
-	in := changes[0]
 
 	var ref string
 	var commit string
