@@ -233,10 +233,15 @@ func (c *cltrigger) triggerBuild(rev revision) error {
 	}
 
 	return c.builder(clTriggerPayload{
-		ChangeID: rev.changeID,
-		Ref:      revision.Ref,
-		Commit:   commit,
-		Branch:   in.Branch,
+		// rev.changeID may be in the unique "project~branch~change_id" form,
+		// and we can't use that form for the workflow trigger payload
+		// as tildes are not allowed in
+		// Use the change ID alone, without any tildes.
+		ChangeID: in.ChangeID,
+
+		Ref:    revision.Ref,
+		Commit: commit,
+		Branch: in.Branch,
 	})
 }
 
