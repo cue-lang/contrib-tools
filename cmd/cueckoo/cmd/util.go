@@ -131,7 +131,7 @@ func loadConfig() (*config, error) {
 	if err != nil {
 		return nil, err
 	}
-	auth.Password, err = mustGetEnv("GITHUB_USER")
+	auth.Password, err = mustGetEnv("GITHUB_PAT")
 	if err != nil {
 		return nil, err
 	}
