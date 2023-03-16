@@ -15,10 +15,8 @@
 package cmd
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-	"os/exec"
 	"regexp"
 	"sort"
 	"strings"
@@ -78,28 +76,22 @@ func (c *cltrigger) run() (err error) {
 // Essentially however we try to follow the semantics of git-codereview:
 //
 // https://pkg.go.dev/golang.org/x/review/git-codereview
-//
 func (c *cltrigger) deriveChangeIDs(args map[string]bool) (res []revision, err error) {
+	ctx := context.TODO()
 	// Work out the branchpoint
-	var bp, bpStderr bytes.Buffer
-	bpCmd := exec.Command("git", "codereview", "branchpoint")
-	bpCmd.Stdout = &bp
-	bpCmd.Stderr = &bpStderr
-	if err := bpCmd.Run(); err != nil {
-		return nil, fmt.Errorf("failed to run [%v]: %v\n%s", strings.Join(bpCmd.Args, " "), err, bpStderr.String())
+	bp, err := run(ctx, "git", "codereview", "branchpoint")
+	if err != nil {
+		return nil, err
 	}
 
 	// Calculate the list of commits that are pending
-	var commitList, clStderr bytes.Buffer
-	logCmd := exec.Command("git", "log", "--pretty=format:%H", "--no-patch", fmt.Sprintf("%s..HEAD", bytes.TrimSpace(bp.Bytes())))
-	logCmd.Stdout = &commitList
-	logCmd.Stderr = &clStderr
-	if err := logCmd.Run(); err != nil {
-		return nil, fmt.Errorf("failed to run [%v]: %v\n%s", strings.Join(logCmd.Args, " "), err, clStderr.String())
+	commitList, err := run(ctx, "git", "log", "--pretty=format:%H", "--no-patch", fmt.Sprintf("%s..HEAD", strings.TrimSpace(bp)))
+	if err != nil {
+		return nil, err
 	}
 
 	var pendingCommits []*object.Commit
-	for _, line := range strings.Split(string(commitList.String()), "\n") {
+	for _, line := range strings.Split(commitList, "\n") {
 		h := strings.TrimSpace(line)
 		commit, err := c.cfg.repo.CommitObject(plumbing.NewHash(h))
 		if err != nil {

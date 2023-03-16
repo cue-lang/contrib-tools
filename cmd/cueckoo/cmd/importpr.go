@@ -209,9 +209,13 @@ func importPRDef(c *Command, args []string) error {
 
 func run(ctx context.Context, name string, args ...string) (string, error) {
 	cmd := exec.CommandContext(ctx, name, args...)
-	out, err := cmd.CombinedOutput()
+	out, err := cmd.Output()
 	if err != nil {
-		return "", fmt.Errorf("%v: %s", err, out)
+		if err, _ := err.(*exec.ExitError); err != nil {
+			// stderr was captured by Output
+			return "", fmt.Errorf("failed to run %q: %v:\n%s", cmd.Args, err, err.Stderr)
+		}
+		return "", fmt.Errorf("failed to run %q: %v", cmd.Args, err)
 	}
 	return string(out), err
 }
