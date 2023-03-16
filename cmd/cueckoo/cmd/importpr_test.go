@@ -20,7 +20,7 @@ func TestAddCloses(t *testing.T) {
 My commit message with no trailer
 
 `,
-			out: "first line\n\nMy commit message with no trailer\n\nCloses #0 as merged.\n",
+			out: "first line\n\nMy commit message with no trailer\n\nCloses #0 as merged as of commit a01b2c3d.\n",
 		},
 		{
 			name: "signed-off-by trailer",
@@ -31,13 +31,13 @@ My commit message with no trailer
 Signed-off-by: Paul
 
 `,
-			out: "first line\n\nMy commit message with no trailer\n\nCloses #0 as merged.\n\nSigned-off-by: Paul\n",
+			out: "first line\n\nMy commit message with no trailer\n\nCloses #0 as merged as of commit a01b2c3d.\n\nSigned-off-by: Paul\n",
 		},
 	}
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			got, err := addClosesMsg(c.in, c.pr)
+			got, err := addClosesMsg(c.in, c.pr, "a01b2c3d")
 			if err != nil {
 				t.Fatalf("got error when none expected: %v", err)
 			}

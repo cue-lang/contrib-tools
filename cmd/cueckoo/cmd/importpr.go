@@ -110,6 +110,14 @@ func importPRDef(c *Command, args []string) error {
 	}
 	log.Printf("fetched PR into branch %q", branchName)
 
+	// Extract the commit hash
+	commitHash, err := run(ctx, "git", "rev-parse", "--short", "HEAD")
+	if err != nil {
+		return fmt.Errorf("failed to establish commit hash: %w", err)
+	}
+	// Remove the trailing \n
+	commitHash = strings.TrimSpace(commitHash)
+
 	// Set the branch upstream as the first step. If subsequent commands fail
 	// (they shouldn't but it can happen) we still need the upstream to have
 	// been set.
@@ -160,7 +168,7 @@ func importPRDef(c *Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	msg, err = addClosesMsg(msg, prNumber)
+	msg, err = addClosesMsg(msg, prNumber, commitHash)
 	if err != nil {
 		return err
 	}
@@ -218,7 +226,7 @@ func run(ctx context.Context, name string, args ...string) (string, error) {
 // git-interpret-trailers". If there are trailers we want to insert "Closes
 // #PR as merged." as the last clear line before the trailers. If there are
 // no trailers, it should be the final line in the commit message.
-func addClosesMsg(msg string, pr int) (string, error) {
+func addClosesMsg(msg string, pr int, commitHash string) (string, error) {
 	// TODO: handle carriage returns?
 
 	// Drop any trailing space. We will add back a \n at the end
@@ -240,7 +248,7 @@ func addClosesMsg(msg string, pr int) (string, error) {
 	msg = strings.TrimRightFunc(msg, unicode.IsSpace)
 
 	// Prepare the closes message
-	closes := fmt.Sprintf("Closes #%d as merged.", pr)
+	closes := fmt.Sprintf("Closes #%d as merged as of commit %v.", pr, commitHash)
 
 	// Add the closes message
 	msg += "\n\n" + closes
