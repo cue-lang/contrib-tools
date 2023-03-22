@@ -144,11 +144,22 @@ func (c *cltrigger) deriveChangeIDs(args map[string]bool) (res []revision, err e
 			}
 		}
 	} else {
+		// To unique the list of commits for which we submit requests
+		seen := make(map[plumbing.Hash]bool)
+
 		// We verify each of the arguments
 	EachArg:
 		for h := range args {
 			// Resolve the arg and ensure we have a matching pending commit
-			commit, err := c.cfg.repo.CommitObject(plumbing.NewHash(h))
+			hash, err := c.cfg.repo.ResolveRevision(plumbing.Revision(h))
+			if err != nil {
+				return nil, fmt.Errorf("failed to resolve revision %q", h)
+			}
+			if seen[*hash] {
+				continue
+			}
+			seen[*hash] = true
+			commit, err := c.cfg.repo.CommitObject(*hash)
 			if err != nil {
 				return nil, fmt.Errorf("failed to derive commit from %q: %v", h, err)
 			}
