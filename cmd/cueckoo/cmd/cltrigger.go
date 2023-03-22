@@ -182,6 +182,8 @@ type revision struct {
 	// However, the command-line UI accepts the three forms as direct arguments.
 	changeID string
 
+	// revision is a commit hash; when empty, we use changeID's latest patchset,
+	// also known as its current revision.
 	revision string
 }
 
@@ -224,12 +226,12 @@ func (c *cltrigger) triggerBuild(rev revision) error {
 
 	commit := rev.revision
 	if commit == "" {
-		// fall back to the current/latest revision
+		// fall back to the current/latest revision, also a commit hash
 		commit = in.CurrentRevision
 	}
-	revision, ok := in.Revisions[rev.revision]
+	revision, ok := in.Revisions[commit]
 	if !ok {
-		return fmt.Errorf("change %v does not know about revision %v; did you forget to run git codereview mail?", rev.changeID, rev.revision)
+		return fmt.Errorf("change %q does not know about revision %q; did you forget to run git codereview mail?", rev.changeID, commit)
 	}
 
 	return c.builder(clTriggerPayload{
