@@ -31,8 +31,8 @@ workflows: [
 	with: "go-version": "${{ matrix.go_version }}"
 }
 
-_#ubuntuLatest: "ubuntu-20.04"
-_#latestGo:     "1.18.x"
+_#ubuntuLatest: "ubuntu-latest"
+_#latestGo:     "1.20.x"
 
 test: json.#Workflow & {
 	name: "Test"
@@ -71,7 +71,7 @@ test: json.#Workflow & {
 			},
 			{
 				name: "staticcheck"
-				run:  "go run honnef.co/go/tools/cmd/staticcheck@2022.1.2 ./..."
+				run:  "go run honnef.co/go/tools/cmd/staticcheck@v0.4.3 ./..."
 			},
 			{
 				name: "Tidy"
