@@ -64,7 +64,7 @@ If the --nounity flag is provided, only a trybot run is triggered.
 }
 
 func runtrybotDef(cmd *Command, args []string) error {
-	cfg, err := loadConfig()
+	cfg, err := loadConfig(cmd.Context())
 	if err != nil {
 		return err
 	}

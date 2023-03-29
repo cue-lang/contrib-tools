@@ -20,9 +20,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 
 	"github.com/cue-sh/tools/internal/codereviewcfg"
-	"github.com/go-git/go-git/v5"
 	"github.com/google/go-github/v31/github"
 	"golang.org/x/build/gerrit"
 )
@@ -48,9 +48,6 @@ type repositoryDispatchPayload struct {
 // directory. Put another way, cueckoo needs to be run from within the main
 // cue repo.
 type config struct {
-	// repo is the local cue repository
-	repo *git.Repository
-
 	// gerritURL is the URL of the Gerrit instance
 	gerritURL string
 
@@ -78,22 +75,16 @@ type config struct {
 
 // loadConfig loads the repository configuration from codereview.cfg, using
 // gh as the key to find the relevant GitHub information
-func loadConfig() (*config, error) {
+func loadConfig(ctx context.Context) (*config, error) {
 	var res config
-	rep, err := git.PlainOpenWithOptions(".", &git.PlainOpenOptions{
-		DetectDotGit: true,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to find git repository: %v", err)
-	}
-	res.repo = rep
 
-	wt, err := rep.Worktree()
+	// Determine git root directory. Note it will have trailing newline
+	gitRoot, err := run(ctx, "git", "rev-parse", "--show-toplevel")
 	if err != nil {
-		return nil, fmt.Errorf("failed to get worktree: %v", err)
+		return nil, fmt.Errorf("failed to determine git root: %w", err)
 	}
 
-	cfg, err := codereviewcfg.Config(wt.Filesystem.Root())
+	cfg, err := codereviewcfg.Config(strings.TrimSpace(gitRoot))
 	if err != nil {
 		return nil, fmt.Errorf("failed to load codereview config: %v", err)
 	}

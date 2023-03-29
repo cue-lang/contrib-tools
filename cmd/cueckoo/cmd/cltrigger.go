@@ -22,8 +22,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/go-git/go-git/v5/plumbing"
-	"github.com/go-git/go-git/v5/plumbing/object"
 	"golang.org/x/build/gerrit"
 )
 
@@ -85,19 +83,9 @@ func (c *cltrigger) deriveChangeIDs(args map[string]bool) (res []revision, err e
 	}
 
 	// Calculate the list of commits that are pending
-	commitList, err := run(ctx, "git", "log", "--pretty=format:%H", "--no-patch", fmt.Sprintf("%s..HEAD", strings.TrimSpace(bp)))
+	pendingCommits, err := resolveCommits(ctx, fmt.Sprintf("%s..HEAD", strings.TrimSpace(bp)))
 	if err != nil {
 		return nil, err
-	}
-
-	var pendingCommits []*object.Commit
-	for _, line := range strings.Split(commitList, "\n") {
-		h := strings.TrimSpace(line)
-		commit, err := c.cfg.repo.CommitObject(plumbing.NewHash(h))
-		if err != nil {
-			return nil, fmt.Errorf("failed to derive commit from %q: %v", h, err)
-		}
-		pendingCommits = append(pendingCommits, commit)
 	}
 
 	if len(pendingCommits) == 0 {
@@ -109,8 +97,8 @@ func (c *cltrigger) deriveChangeIDs(args map[string]bool) (res []revision, err e
 	if !args["HEAD"] && len(pendingCommits) > 1 && len(args) == 0 {
 		return nil, fmt.Errorf("must specify commits as arguments or use HEAD for everything")
 	}
-	addRevision := func(pc *object.Commit) error {
-		changeID, err := getChangeIDFromCommitMsg(pc.Message)
+	addRevision := func(pc commit) error {
+		changeID, err := getChangeIDFromCommitMsg(pc.body)
 		if err != nil {
 			return fmt.Errorf("failed to derive change ID: %v", err)
 		}
@@ -132,7 +120,7 @@ func (c *cltrigger) deriveChangeIDs(args map[string]bool) (res []revision, err e
 
 		res = append(res, revision{
 			changeID: changeID,
-			revision: pc.Hash.String(),
+			revision: pc.hash,
 		})
 		return nil
 	}
@@ -145,26 +133,24 @@ func (c *cltrigger) deriveChangeIDs(args map[string]bool) (res []revision, err e
 		}
 	} else {
 		// To unique the list of commits for which we submit requests
-		seen := make(map[plumbing.Hash]bool)
+		seen := make(map[string]bool)
 
 		// We verify each of the arguments
 	EachArg:
 		for h := range args {
 			// Resolve the arg and ensure we have a matching pending commit
-			hash, err := c.cfg.repo.ResolveRevision(plumbing.Revision(h))
-			if err != nil {
+			// and ensure we have a single one
+			commits, err := resolveCommits(ctx, h)
+			if err != nil || len(commits) != 1 {
 				return nil, fmt.Errorf("failed to resolve revision %q", h)
 			}
-			if seen[*hash] {
+			commit := commits[0]
+			if seen[commit.hash] {
 				continue
 			}
-			seen[*hash] = true
-			commit, err := c.cfg.repo.CommitObject(*hash)
-			if err != nil {
-				return nil, fmt.Errorf("failed to derive commit from %q: %v", h, err)
-			}
+			seen[commit.hash] = true
 			for _, pc := range pendingCommits {
-				if commit.Hash == pc.Hash {
+				if commit.hash == pc.hash {
 					if err := addRevision(pc); err != nil {
 						return nil, err
 					}
@@ -175,6 +161,37 @@ func (c *cltrigger) deriveChangeIDs(args map[string]bool) (res []revision, err e
 		}
 	}
 	return
+}
+
+type commit struct {
+	hash string
+	body string
+}
+
+func resolveCommits(ctx context.Context, args ...string) ([]commit, error) {
+
+	// Log a stream of commits, separated by NUL, with a single space
+	// separating the commit hash and commit message body
+	cmd := append([]string{"git", "log", "-z", "--pretty=format:%H %B", "--no-patch"}, args...)
+	commitStream, err := run(ctx, cmd[0], cmd[1:]...)
+	if err != nil {
+		return nil, err
+	}
+
+	var commits []commit
+
+	// The results are NUL-separated thanks to -z
+	commitList := strings.Split(commitStream, "\x00")
+
+	for _, commitBlob := range commitList {
+		parts := strings.SplitN(commitBlob, " ", 2)
+		commits = append(commits, commit{
+			hash: parts[0],
+			body: parts[1],
+		})
+	}
+
+	return commits, nil
 }
 
 type revision struct {

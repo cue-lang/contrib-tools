@@ -47,7 +47,7 @@ func importPRDef(c *Command, args []string) error {
 	log.SetPrefix("[importpr] ")
 	log.SetFlags(0) // no timestamps, as they aren't very useful
 
-	cfg, err := loadConfig()
+	cfg, err := loadConfig(c.Context())
 	if err != nil {
 		return err
 	}
@@ -66,10 +66,7 @@ func importPRDef(c *Command, args []string) error {
 
 	branchName := fmt.Sprintf("importpr-%d", prNumber)
 
-	// TODO: Note that mainErr's ctx is not wired here.
-	// We should wire it up and use it for e.g. FetchContext.
-	// For now, use a hard-coded timeout of 10s.
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(c.Context(), 10*time.Second)
 	defer cancel()
 
 	pr, _, err := cfg.githubClient.PullRequests.Get(context.Background(), cfg.githubOwner, cfg.githubRepo, prNumber)
