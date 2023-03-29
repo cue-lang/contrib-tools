@@ -140,7 +140,7 @@ func (c *cltrigger) deriveChangeIDs(args map[string]bool) (res []revision, err e
 		for h := range args {
 			// Resolve the arg and ensure we have a matching pending commit
 			// and ensure we have a single one
-			commits, err := resolveCommits(ctx, h)
+			commits, err := resolveCommits(ctx, "-1", h)
 			if err != nil || len(commits) != 1 {
 				return nil, fmt.Errorf("failed to resolve revision %q", h)
 			}
