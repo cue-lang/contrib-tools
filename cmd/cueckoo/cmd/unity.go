@@ -57,7 +57,7 @@ access token only requires "public_repo" scope.
 }
 
 func unityDef(cmd *Command, args []string) error {
-	cfg, err := loadConfig()
+	cfg, err := loadConfig(cmd.Context())
 	if err != nil {
 		return err
 	}
