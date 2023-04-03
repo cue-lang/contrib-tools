@@ -73,9 +73,10 @@ func unityDef(cmd *Command, args []string) error {
 		for i, a := range args {
 			args[i] = strconv.Quote(a)
 		}
-		payload, err := buildUnityPayload(fmt.Sprintf("unity run for versions %s", unquoted), unityPayload{
-			Versions: strings.Join(args, " "),
-		})
+		var up unityPayload
+		up.Type = string(eventTypeUnity)
+		up.Versions = strings.Join(args, " ")
+		payload, err := buildUnityPayload(fmt.Sprintf("unity run for versions %s", unquoted), up)
 		if err != nil {
 			return err
 		}
@@ -84,7 +85,8 @@ func unityDef(cmd *Command, args []string) error {
 
 	// Interpret as a request to test CLs
 
-	r := newCLTrigger(cmd, cfg, func(payload clTriggerPayload) error {
+	r := newCLTrigger(cmd, cfg, func(payload repositoryDispatchPayload) error {
+		payload.Type = string(eventTypeUnity)
 		p, err := buildUnityPayloadFromCLTrigger(payload)
 		if err != nil {
 			return err
@@ -98,25 +100,23 @@ func unityDef(cmd *Command, args []string) error {
 }
 
 type unityPayload struct {
-	CL *clTriggerPayload `json:"cl"`
+	repositoryDispatchPayload
 
 	// Versions is string "list" of versions against
 	// which to run unity, e.g.
 	//
 	//    "\"v0.3.0-beta.5\" \"v0.3.0-beta.4\""
 	//
-	Versions string `json:"versions"`
+	Versions string `json:"versions,omitempty"`
 }
 
 func buildUnityPayload(msg string, payload unityPayload) (github.DispatchRequestOptions, error) {
-	return buildDispatchPayload(msg, eventTypeUnity, payload)
+	return buildDispatchPayload(msg, payload)
 }
 
-func buildUnityPayloadFromCLTrigger(payload clTriggerPayload) (github.DispatchRequestOptions, error) {
+func buildUnityPayloadFromCLTrigger(payload repositoryDispatchPayload) (github.DispatchRequestOptions, error) {
 	msg := fmt.Sprintf("unity run for %v", payload.Ref)
-	version := strconv.Quote(payload.Ref)
-	return buildDispatchPayload(msg, eventTypeUnity, unityPayload{
-		Versions: version,
-		CL:       &payload,
+	return buildDispatchPayload(msg, unityPayload{
+		repositoryDispatchPayload: payload,
 	})
 }

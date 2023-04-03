@@ -1,15 +1,9 @@
 {
-  "event_type": "unity run for ref",
+  "event_type": "unity run for refs/changes/25/551325/14",
   "client_payload": {
-    "type": "unity",
-    "payload": {
-      "cl": {
-        "changeID": "change",
-        "ref": "ref",
-        "commit": "commit",
-        "branch": "branch"
-      },
-      "versions": "\"ref\""
-    }
+    "CL": 54321,
+    "patchset": 24,
+    "targetBranch": "master",
+    "ref": "refs/changes/25/551325/14"
   }
 }

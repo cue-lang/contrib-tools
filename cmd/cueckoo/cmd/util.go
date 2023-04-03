@@ -33,15 +33,14 @@ import (
 type eventType string
 
 const (
+	// NOTE: the values for trybot and unity must be consistent with the names
+	// defined in the cuelang.org/go/internal/ci/base package.
+	//
+	// TODO: refactor to sort out types.
 	eventTypeTrybot   eventType = "trybot"
 	eventTypeImportPR eventType = "importpr"
 	eventTypeUnity    eventType = "unity"
 )
-
-type repositoryDispatchPayload struct {
-	Type    eventType   `json:"type"`
-	Payload interface{} `json:"payload"`
-}
 
 // config holds the configuration that is loaded from the codereview config
 // found within the root of the git directory that contains the working
@@ -156,12 +155,8 @@ func (c *config) triggerRepositoryDispatch(owner, repo string, payload github.Di
 	return nil
 }
 
-func buildDispatchPayload(msg string, et eventType, payload interface{}) (ro github.DispatchRequestOptions, err error) {
-	rp := repositoryDispatchPayload{
-		Type:    et,
-		Payload: payload,
-	}
-	byts, err := json.Marshal(rp)
+func buildDispatchPayload(msg string, payload interface{}) (ro github.DispatchRequestOptions, err error) {
+	byts, err := json.Marshal(payload)
 	if err != nil {
 		return ro, fmt.Errorf("failed to marshal payload: %v", err)
 	}

@@ -68,8 +68,10 @@ func runtrybotDef(cmd *Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	r := newCLTrigger(cmd, cfg, func(payload clTriggerPayload) error {
-		p, err := buildTryBotPayload(payload)
+	r := newCLTrigger(cmd, cfg, func(payload repositoryDispatchPayload) error {
+		trybotPayload := payload
+		trybotPayload.Type = string(eventTypeTrybot)
+		p, err := buildTryBotPayload(trybotPayload)
 		if err != nil {
 			return err
 		}
@@ -77,7 +79,9 @@ func runtrybotDef(cmd *Command, args []string) error {
 			return err
 		}
 		if cfg.unityRepo != "" && !flagRunTrybotNoUnity.Bool(cmd) {
-			p, err := buildUnityPayloadFromCLTrigger(payload)
+			unityPayload := payload
+			unityPayload.Type = string(eventTypeUnity)
+			p, err := buildUnityPayloadFromCLTrigger(unityPayload)
 			if err != nil {
 				return err
 			}
@@ -90,7 +94,7 @@ func runtrybotDef(cmd *Command, args []string) error {
 	return r.run()
 }
 
-func buildTryBotPayload(payload clTriggerPayload) (github.DispatchRequestOptions, error) {
+func buildTryBotPayload(payload repositoryDispatchPayload) (github.DispatchRequestOptions, error) {
 	msg := fmt.Sprintf("trybot run for %v", payload.Ref)
-	return buildDispatchPayload(msg, eventTypeTrybot, payload)
+	return buildDispatchPayload(msg, payload)
 }

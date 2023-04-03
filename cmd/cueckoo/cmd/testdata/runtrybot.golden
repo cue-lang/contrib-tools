@@ -1,12 +1,9 @@
 {
-  "event_type": "trybot run for ref",
+  "event_type": "trybot run for refs/changes/52/551352/140",
   "client_payload": {
-    "type": "trybot",
-    "payload": {
-      "changeID": "change",
-      "ref": "ref",
-      "commit": "commit",
-      "branch": "branch"
-    }
+    "CL": 12345,
+    "patchset": 42,
+    "targetBranch": "master",
+    "ref": "refs/changes/52/551352/140"
   }
 }
