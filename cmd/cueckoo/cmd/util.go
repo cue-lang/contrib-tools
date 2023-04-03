@@ -18,7 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"strings"
 
@@ -146,7 +146,7 @@ func (c *config) triggerRepositoryDispatch(owner, repo string, payload github.Di
 		return fmt.Errorf("failed to send dispatch event: %v", err)
 	}
 	if resp.StatusCode/100 != 2 {
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			body = []byte("(failed to read body)")
 		}
