@@ -141,6 +141,7 @@ func mustGetEnv(name string) (string, error) {
 }
 
 func (c *config) triggerRepositoryDispatch(owner, repo string, payload github.DispatchRequestOptions) error {
+	debugf("triggerRepositoryDispatch in %s/%s with payload:\n%s\n", owner, repo, payload.ClientPayload)
 	_, resp, err := c.githubClient.Repositories.Dispatch(context.Background(), owner, repo, payload)
 	if err != nil {
 		return fmt.Errorf("failed to send dispatch event: %v", err)

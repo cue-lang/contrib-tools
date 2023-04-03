@@ -16,10 +16,15 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"os"
 
 	"cuelang.org/go/cue/errors"
 	"github.com/spf13/cobra"
+)
+
+var (
+	debug = os.Getenv("CUECKOO_DEBUG") != ""
 )
 
 // Main runs the cueckoo tool and returns the code for passing to os.Exit.
@@ -82,4 +87,10 @@ func newRootCmd() *Command {
 	}
 
 	return c
+}
+
+func debugf(format string, args ...any) {
+	if debug {
+		fmt.Fprintf(os.Stderr, format, args...)
+	}
 }
