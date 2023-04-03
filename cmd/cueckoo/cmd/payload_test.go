@@ -36,20 +36,20 @@ func TestPayloads(t *testing.T) {
 		return dro
 	}
 	testCases := map[string]github.DispatchRequestOptions{
-		"runtrybot": must(buildTryBotPayload(clTriggerPayload{
-			ChangeID: "change",
-			Ref:      "ref",
-			Commit:   "commit",
-			Branch:   "branch",
+		"runtrybot": must(buildTryBotPayload(repositoryDispatchPayload{
+			CL:           12345,
+			Patchset:     42,
+			Ref:          "refs/changes/52/551352/140",
+			TargetBranch: "master",
 		})),
 		"unity_versions": must(buildUnityPayload("hello", unityPayload{
 			Versions: "\"v0.3.0-beta.5\"",
 		})),
-		"unity_cl": must(buildUnityPayloadFromCLTrigger(clTriggerPayload{
-			ChangeID: "change",
-			Ref:      "ref",
-			Commit:   "commit",
-			Branch:   "branch",
+		"unity_cl": must(buildUnityPayloadFromCLTrigger(repositoryDispatchPayload{
+			CL:           54321,
+			Patchset:     24,
+			Ref:          "refs/changes/25/551325/14",
+			TargetBranch: "master",
 		})),
 	}
 

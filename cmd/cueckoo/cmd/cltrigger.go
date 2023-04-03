@@ -29,7 +29,7 @@ var (
 	changeIDRegex = regexp.MustCompile(`(?m)^Change-Id: (.*)$`)
 )
 
-type builder func(payload clTriggerPayload) error
+type builder func(payload repositoryDispatchPayload) error
 
 type cltrigger struct {
 	cmd     *Command
@@ -262,24 +262,20 @@ func (c *cltrigger) triggerBuild(rev revision) error {
 		return fmt.Errorf("change %q does not know about revision %q; did you forget to run git codereview mail?", rev.changeID, commit)
 	}
 
-	return c.builder(clTriggerPayload{
-		// rev.changeID may be in the unique "project~branch~change_id" form,
-		// and we can't use that form for the workflow trigger payload
-		// as tildes are not allowed in
-		// Use the change ID alone, without any tildes.
-		ChangeID: in.ChangeID,
-
-		Ref:    revision.Ref,
-		Commit: commit,
-		Branch: in.Branch,
+	return c.builder(repositoryDispatchPayload{
+		CL:           in.ChangeNumber,
+		Patchset:     revision.PatchSetNumber,
+		TargetBranch: in.Branch,
+		Ref:          revision.Ref,
 	})
 }
 
-type clTriggerPayload struct {
-	ChangeID string `json:"changeID"`
-	Ref      string `json:"ref"`
-	Commit   string `json:"commit"`
-	Branch   string `json:"branch"`
+type repositoryDispatchPayload struct {
+	Type         string `json:"type,omitempty"`
+	CL           int    `json:"CL,omitempty"`
+	Patchset     int    `json:"patchset,omitempty"`
+	TargetBranch string `json:"targetBranch,omitempty"`
+	Ref          string `json:"ref,omitempty"`
 }
 
 func getChangeIDFromCommitMsg(msg string) (string, error) {
