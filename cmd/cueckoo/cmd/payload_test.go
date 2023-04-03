@@ -18,7 +18,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"flag"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -60,7 +60,7 @@ func TestPayloads(t *testing.T) {
 				t.Fatalf("failed to marshal: %v", err)
 			}
 			fn := filepath.Join("testdata", key+".golden")
-			golden, err := ioutil.ReadFile(fn)
+			golden, err := os.ReadFile(fn)
 			if err != nil {
 				t.Fatalf("failed to read golden file %s: %v", fn, err)
 			}
@@ -69,7 +69,7 @@ func TestPayloads(t *testing.T) {
 				if !*fUpdate {
 					t.Fatalf("output did not match golden file:\n%s", cmp.Diff(byts, golden))
 				}
-				if err := ioutil.WriteFile(fn, byts, 0666); err != nil {
+				if err := os.WriteFile(fn, byts, 0666); err != nil {
 					t.Fatalf("failed to update golden file %v: %v", fn, err)
 				}
 			}

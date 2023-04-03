@@ -1,6 +1,6 @@
 module github.com/cue-sh/tools
 
-go 1.17
+go 1.20
 
 require (
 	cuelang.org/go v0.4.3

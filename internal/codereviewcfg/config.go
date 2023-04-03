@@ -16,8 +16,8 @@ package codereviewcfg
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/url"
+	"os"
 	"path/filepath"
 	"strings"
 )
@@ -27,7 +27,7 @@ import (
 // there is no config or the config is malformed, an error is returned.
 func Config(root string) (map[string]string, error) {
 	configPath := filepath.Join(root, "codereview.cfg")
-	b, err := ioutil.ReadFile(configPath)
+	b, err := os.ReadFile(configPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load config from %v: %v", configPath, err)
 	}
