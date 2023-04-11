@@ -1,0 +1,112 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b6e0e654_bae814e9",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-04-11T20:33:58Z",
+      "side": 1,
+      "message": "when I mentioned that I was sure we could do this without graphql and without timestamp queries, this is the sort of range query I was imagining :) SGTM",
+      "revId": "0ba5c3549d83aa6247f9cb3162edba92f18c70b2",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "86ce5263_6fe5425f",
+        "filename": "cmd/cueckoo/cmd/releaselog.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-04-11T20:33:58Z",
+      "side": 1,
+      "message": "in reverse chronological order?",
+      "range": {
+        "startLine": 46,
+        "startChar": 34,
+        "endLine": 46,
+        "endChar": 57
+      },
+      "revId": "0ba5c3549d83aa6247f9cb3162edba92f18c70b2",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2b39ddad_fb72a975",
+        "filename": "cmd/cueckoo/cmd/releaselog.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-04-11T20:33:58Z",
+      "side": 1,
+      "message": "I guess with this naive page-based iteration, we assume that the range given by the user is static, e.g. there are no tags being force pushed.",
+      "revId": "0ba5c3549d83aa6247f9cb3162edba92f18c70b2",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6b1b3a40_0c97b790",
+        "filename": "cmd/cueckoo/cmd/releaselog.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-04-11T20:33:58Z",
+      "side": 1,
+      "message": "nit: call it `commit`?",
+      "revId": "0ba5c3549d83aa6247f9cb3162edba92f18c70b2",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "836c9924_c96ee6e2",
+        "filename": "cmd/cueckoo/cmd/releaselog.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-04-11T20:33:58Z",
+      "side": 1,
+      "message": "the github API baffles me. a RepositoryCommit contains a Commit, but they both overlap with a dozen fields like SHA, Author, URL, and so on. Moreover some of those, like Author, use different types too. ??????\n\nI\u0027m guessing what you did here is right, but my brain hurts trying to understand what\u0027s going on.",
+      "revId": "0ba5c3549d83aa6247f9cb3162edba92f18c70b2",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b5649a2e_ad943388",
+        "filename": "cmd/cueckoo/cmd/releaselog.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-04-11T20:33:58Z",
+      "side": 1,
+      "message": "nit: `summary, _, _ :\u003d strings.Cut(msg, \"\\n\")`",
+      "revId": "0ba5c3549d83aa6247f9cb3162edba92f18c70b2",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
