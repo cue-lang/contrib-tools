@@ -23,7 +23,7 @@ import (
 	"strings"
 
 	"github.com/cue-sh/tools/internal/codereviewcfg"
-	"github.com/google/go-github/v31/github"
+	"github.com/google/go-github/v51/github"
 	"golang.org/x/build/gerrit"
 )
 
