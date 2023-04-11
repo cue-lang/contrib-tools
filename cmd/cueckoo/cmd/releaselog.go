@@ -80,8 +80,9 @@ func releaseLog(cmd *Command, args []string) error {
 		// Extract the commits
 		commits = append(commits, res.Commits...)
 
-		// Break if done
-		if resp.LastPage == opts.Page {
+		// Break if done. For some reason, when there is just one page of results
+		// resp.LastPage is 0. Who would have thought?!
+		if resp.LastPage <= opts.Page {
 			break
 		}
 		opts.Page++
