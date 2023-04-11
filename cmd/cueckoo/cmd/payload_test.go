@@ -23,7 +23,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-github/v31/github"
+	"github.com/google/go-github/v51/github"
 )
 
 var fUpdate = flag.Bool("update", false, "whether to update golden files")

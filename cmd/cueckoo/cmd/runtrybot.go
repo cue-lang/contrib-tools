@@ -17,7 +17,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/google/go-github/v31/github"
+	"github.com/google/go-github/v51/github"
 	"github.com/spf13/cobra"
 )
 
