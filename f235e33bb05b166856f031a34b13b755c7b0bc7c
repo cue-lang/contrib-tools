@@ -16,6 +16,23 @@
       "message": "This can be the last piece to be merged, since we can test it before merging.",
       "revId": "f235e33bb05b166856f031a34b13b755c7b0bc7c",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "28952ebb_2140b0a8",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-05-12T12:47:27Z",
+      "side": 1,
+      "message": "Verified that it works: https://review.gerrithub.io/c/cue-lang/cue/+/538624/3#message-cd92f2c6b5be7bb8feddba089ee31a526d4007dc",
+      "revId": "f235e33bb05b166856f031a34b13b755c7b0bc7c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
