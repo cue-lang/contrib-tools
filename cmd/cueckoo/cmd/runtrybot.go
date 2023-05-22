@@ -78,22 +78,15 @@ func runtrybotDef(cmd *Command, args []string) error {
 		if err := cfg.triggerRepositoryDispatch(cfg.githubOwner, cfg.githubRepo, p); err != nil {
 			return err
 		}
-		// Until the transition from cue-unity/unity to cue-unity/unity-private is complete,
-		// cueckoo runtrybot triggers dispatches on both repositories.
-		for _, pair := range []struct{ unityOwner, unityRepo string }{
-			{cfg.unityOwner, cfg.unityRepo},
-			{cfg.unityNewOwner, cfg.unityNewRepo},
-		} {
-			if pair.unityRepo != "" && !flagRunTrybotNoUnity.Bool(cmd) {
-				unityPayload := payload
-				unityPayload.Type = string(eventTypeUnity)
-				p, err := buildUnityPayloadFromCLTrigger(unityPayload)
-				if err != nil {
-					return err
-				}
-				if err := cfg.triggerRepositoryDispatch(pair.unityOwner, pair.unityRepo, p); err != nil {
-					return err
-				}
+		if cfg.unityRepo != "" && !flagRunTrybotNoUnity.Bool(cmd) {
+			unityPayload := payload
+			unityPayload.Type = string(eventTypeUnity)
+			p, err := buildUnityPayloadFromCLTrigger(unityPayload)
+			if err != nil {
+				return err
+			}
+			if err := cfg.triggerRepositoryDispatch(cfg.unityOwner, cfg.unityRepo, p); err != nil {
+				return err
 			}
 		}
 		return nil
