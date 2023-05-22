@@ -65,11 +65,6 @@ type config struct {
 	// unityRepo is the name of the unity repo
 	unityRepo string
 
-	// Like unityOwner and unityRepo, until cue-unity/unity-private replaces cue-unity/unity.
-	// Only used in the "runtrybot" command for now.
-	unityNewOwner string
-	unityNewRepo  string
-
 	// githubClient is the client for using the GitHub API
 	githubClient *github.Client
 
@@ -112,17 +107,15 @@ func loadConfig(ctx context.Context) (*config, error) {
 		return nil, fmt.Errorf("failed to derive GitHub owner and repo from %v: %v", githubURL, err)
 	}
 
-	// unity configuration is optional
-	if unityURL := cfg["cue-unity"]; unityURL != "" {
-		res.unityOwner, res.unityRepo, err = codereviewcfg.GithubURLToParts(unityURL)
-		if err != nil {
-			return nil, fmt.Errorf("failed to derive unity owner and repo from %v: %v", unityURL, err)
-		}
-	}
-	if unityURL := cfg["cue-unity-new"]; unityURL != "" {
-		res.unityNewOwner, res.unityNewRepo, err = codereviewcfg.GithubURLToParts(unityURL)
-		if err != nil {
-			return nil, fmt.Errorf("failed to derive unity owner and repo from %v: %v", unityURL, err)
+	// Unity configuration is optional.
+	// We check the "new" config entry first, as we transition to a single Unity entry in cue-lang/cue again.
+	for _, entry := range []string{"cue-unity-new", "cue-unity"} {
+		if unityURL := cfg[entry]; unityURL != "" {
+			res.unityOwner, res.unityRepo, err = codereviewcfg.GithubURLToParts(unityURL)
+			if err != nil {
+				return nil, fmt.Errorf("failed to derive unity owner and repo from %v: %v", unityURL, err)
+			}
+			break
 		}
 	}
 
