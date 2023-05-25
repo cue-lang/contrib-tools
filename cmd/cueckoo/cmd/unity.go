@@ -47,7 +47,7 @@ versions understood by unity.
 
 unity requires GITHUB_USER and GITHUB_PAT environment variables to be set with
 your GitHub username and personal acccess token respectively. The personal
-access token only requires "public_repo" scope.
+access token requires the "repo" scope, since Unity is a private repository.
 `,
 		RunE: mkRunE(c, unityDef),
 	}
