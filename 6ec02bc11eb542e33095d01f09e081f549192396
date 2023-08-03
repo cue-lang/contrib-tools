@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cb6b3ffa_a580f8dc",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2023-08-03T12:11:01Z",
+      "side": 1,
+      "message": "LGTM with one small nit.",
+      "revId": "6ec02bc11eb542e33095d01f09e081f549192396",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "201d8d73_48752de7",
+        "filename": "cmd/cueckoo/cmd/util.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2023-08-03T12:11:01Z",
+      "side": 1,
+      "message": "Nit: not sure this is correct? Output explicitly does not captured Stderr.\n\n\u003e Output runs the command and returns its standard output. Any returned error will usually be of type *ExitError. If c.Stderr was nil, Output populates ExitError.Stderr.",
+      "revId": "6ec02bc11eb542e33095d01f09e081f549192396",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
