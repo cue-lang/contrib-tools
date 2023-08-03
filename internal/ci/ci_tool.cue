@@ -19,7 +19,6 @@ import (
 
 	"encoding/yaml"
 
-	"tool/exec"
 	"tool/file"
 
 	"github.com/cue-sh/tools/internal/ci/repo"
@@ -66,69 +65,4 @@ command: gen: codereviewcfg: file.Create & {
 	let res = repo.toCodeReviewCfg & {#input: repo.codeReview, _}
 	let donotedit = repo.doNotEditMessage & {#generatedBy: "internal/ci/ci_tool.cue", _}
 	contents: "# \(donotedit)\n\n\(res)\n"
-}
-
-// updateTxtarTests ensures certain txtar tests are updated with the
-// relevant files that make up the process of generating our CI
-// workflows.
-//
-// See internal/ci/gen.go for details on how this step fits into the sequence
-// of generating our CI workflow definitions, and updating various txtar tests
-// with files from that process.
-//
-// This also explains why the ../../ relative path specification below appear
-// wrong in the context of the containing directory internal/ci/vendor.
-command: updateTxtarTests: {
-	goos: _goos
-
-	readJSONSchema: file.Read & {
-		_path:    path.FromSlash("../../cue.mod/pkg/github.com/SchemaStore/schemastore/src/schemas/json/github-workflow.cue", path.Unix)
-		filename: path.Join([_path], goos.GOOS)
-		contents: string
-	}
-	cueDefInternalCI: exec.Run & {
-		cmd:    "go run cuelang.org/go/cmd/cue def cuelang.org/go/internal/ci"
-		stdout: string
-	}
-	// updateEvalTxtarTest updates the cue/testdata/eval testscript which exercises
-	// the evaluation of the workflows defined in internal/ci (which by definition
-	// means resolving and using the vendored GitHub Workflow schema)
-	updateEvalTxtarTest: {
-		_relpath: path.FromSlash("../../cue/testdata/eval/github.txtar", path.Unix)
-		_path:    path.Join([_relpath], goos.GOOS)
-
-		githubSchema: exec.Run & {
-			stdin: readJSONSchema.contents
-			cmd:   "go run cuelang.org/go/internal/ci/updateTxtar - \(_path) cue.mod/pkg/github.com/SchemaStore/schemastore/src/schemas/json/github-workflow.cue"
-		}
-		defWorkflows: exec.Run & {
-			$after: githubSchema
-			stdin:  cueDefInternalCI.stdout
-			cmd:    "go run cuelang.org/go/internal/ci/updateTxtar - \(_path) workflows.cue"
-		}
-	}
-	// When we have a solution for cuelang.org/issue/709 we can make this a
-	// file.Glob
-	readToolsFile: file.Read & {
-		filename: "ci_tool.cue"
-		contents: string
-	}
-	updateCmdCueCmdTxtarTest: {
-		_relpath: path.FromSlash("../../cmd/cue/cmd/testdata/script/cmd_github.txt", path.Unix)
-		_path:    path.Join([_relpath], goos.GOOS)
-
-		githubSchema: exec.Run & {
-			stdin: readJSONSchema.contents
-			cmd:   "go run cuelang.org/go/internal/ci/updateTxtar - \(_path) cue.mod/pkg/github.com/SchemaStore/schemastore/src/schemas/json/github-workflow.cue"
-		}
-		defWorkflows: exec.Run & {
-			$after: githubSchema
-			stdin:  cueDefInternalCI.stdout
-			cmd:    "go run cuelang.org/go/internal/ci/updateTxtar - \(_path) internal/ci/workflows.cue"
-		}
-		toolsFile: exec.Run & {
-			stdin: readToolsFile.contents
-			cmd:   "go run cuelang.org/go/internal/ci/updateTxtar - \(_path) internal/ci/\(readToolsFile.filename)"
-		}
-	}
 }
