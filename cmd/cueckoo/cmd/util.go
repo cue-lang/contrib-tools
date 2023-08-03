@@ -19,7 +19,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/url"
 	"os"
+	"os/exec"
 	"strings"
 
 	"github.com/andygrunwald/go-gerrit"
@@ -119,16 +121,18 @@ func loadConfig(ctx context.Context) (*config, error) {
 		}
 	}
 
-	var auth github.BasicAuthTransport
-	auth.Username, err = mustGetEnv("GITHUB_USER")
-	if err != nil {
-		return nil, err
+	githubUser, githubPassword, err := gitCredentials(ctx, githubURL)
+	if githubUser == "" || githubPassword == "" || err != nil {
+		// Fall back to the manual env vars.
+		githubUser = os.Getenv("GITHUB_USER")
+		githubPassword = os.Getenv("GITHUB_PAT")
+		if githubUser == "" || githubPassword == "" {
+			return nil, fmt.Errorf("configure a git credential helper or set GITHUB_USER and GITHUB_PAT")
+		}
 	}
-	auth.Password, err = mustGetEnv("GITHUB_PAT")
-	if err != nil {
-		return nil, err
-	}
-	res.githubClient = github.NewClient(auth.Client())
+	githubAuth := github.BasicAuthTransport{Username: githubUser, Password: githubPassword}
+	res.githubClient = github.NewClient(githubAuth.Client())
+
 	res.gerritClient, err = gerrit.NewClient(res.gerritURL, nil)
 	if err != nil {
 		return nil, err
@@ -137,12 +141,59 @@ func loadConfig(ctx context.Context) (*config, error) {
 	return &res, nil
 }
 
-func mustGetEnv(name string) (string, error) {
-	val := os.Getenv(name)
-	if val == "" {
-		return "", fmt.Errorf("%s is required", name)
+func gitCredentials(ctx context.Context, repoURL string) (username, password string, _ error) {
+	// For example:
+	//
+	//    $ git credential fill
+	//    protocol=https
+	//    host=example.com
+	//    path=foo.git
+	//    ^D
+	//    protocol=https
+	//    host=example.com
+	//    username=bob
+	//    password=secr3t
+
+	u, err := url.Parse(repoURL)
+	if err != nil {
+		return "", "", err
 	}
-	return val, nil
+	input := strings.Join([]string{
+		"protocol=" + u.Scheme,
+		"host=" + u.Host,
+		"path=" + u.Path,
+	}, "\n") + "\n" // `git credential` wants a trailing newline
+	cmd := exec.CommandContext(ctx, "git", "credential", "fill")
+	cmd.Stdin = strings.NewReader(input)
+	outputBytes, err := cmd.Output()
+	if err != nil {
+		if err, _ := err.(*exec.ExitError); err != nil {
+			// stderr was captured by Output
+			return "", "", fmt.Errorf("failed to run %q: %v:\n%s", cmd.Args, err, err.Stderr)
+		}
+		return "", "", fmt.Errorf("failed to run %q: %v", cmd.Args, err)
+	}
+	for _, line := range strings.Split(string(outputBytes), "\n") {
+		if line == "" {
+			continue // ignore the trailing empty line
+		}
+		key, val, ok := strings.Cut(line, "=")
+		if !ok {
+			return "", "", fmt.Errorf("invalid output line: %q", line)
+		}
+		switch key {
+		case "protocol", "host", "path":
+			// input keys are repeated; ignore them.
+		case "username":
+			username = val
+		case "password":
+			password = val
+		default:
+			// Could happen if the user configured an auth mechanism we don't support, like oauth.
+			return "", "", fmt.Errorf("unknown output line key: %q", line)
+		}
+	}
+	return username, password, nil
 }
 
 func (c *config) triggerRepositoryDispatch(owner, repo string, payload github.DispatchRequestOptions) error {
