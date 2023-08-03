@@ -133,10 +133,20 @@ func loadConfig(ctx context.Context) (*config, error) {
 	githubAuth := github.BasicAuthTransport{Username: githubUser, Password: githubPassword}
 	res.githubClient = github.NewClient(githubAuth.Client())
 
+	gerritUser, gerritPassword, err := gitCredentials(ctx, gerritURL)
+	if gerritUser == "" || gerritPassword == "" || err != nil {
+		// Fall back to the manual env vars.
+		gerritUser = os.Getenv("GERRIT_USER")
+		gerritPassword = os.Getenv("GERRIT_PASSWORD")
+		if gerritUser == "" || gerritPassword == "" {
+			return nil, fmt.Errorf("configure a git credential helper or set GERRIT_USER and GERRIT_PASSWORD")
+		}
+	}
 	res.gerritClient, err = gerrit.NewClient(res.gerritURL, nil)
 	if err != nil {
 		return nil, err
 	}
+	res.gerritClient.Authentication.SetBasicAuth(gerritUser, gerritPassword)
 
 	return &res, nil
 }
