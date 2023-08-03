@@ -20,16 +20,13 @@
 package cmd
 
 import (
-	"bytes"
 	"context"
+	"errors"
+	"fmt"
 	"io"
 	"os"
-	"strings"
 
-	"cuelang.org/go/cue/errors"
 	"github.com/spf13/cobra"
-	"golang.org/x/text/language"
-	"golang.org/x/text/message"
 )
 
 type panicError struct {
@@ -129,37 +126,10 @@ func exitOnErr(cmd *Command, err error, fatal bool) {
 		return
 	}
 
-	// Link x/text as our localizer.
-	p := message.NewPrinter(getLang())
-	format := func(w io.Writer, format string, args ...interface{}) {
-		p.Fprintf(w, format, args...)
-	}
-
-	cwd, _ := os.Getwd()
-
-	w := &bytes.Buffer{}
-	errors.Print(w, err, &errors.Config{
-		Format:  format,
-		Cwd:     cwd,
-		ToSlash: inTest,
-	})
-
-	b := w.Bytes()
-	_, _ = cmd.Stderr().Write(b)
+	fmt.Fprintln(os.Stderr, err)
 	if fatal {
 		exit()
 	}
-}
-
-var inTest = false
-
-func getLang() language.Tag {
-	loc := os.Getenv("LC_ALL")
-	if loc == "" {
-		loc = os.Getenv("LANG")
-	}
-	loc = strings.Split(loc, ".")[0]
-	return language.Make(loc)
 }
 
 type runFunction func(cmd *Command, args []string) error
