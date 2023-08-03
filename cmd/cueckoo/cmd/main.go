@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"os"
 
-	"cuelang.org/go/cue/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -33,13 +32,10 @@ var (
 // using the same version of Cobra) for consistency. Panic is used as a
 // strategy for early-return from any running command.
 func Main() int {
-	cwd, _ := os.Getwd()
 	err := mainErr(context.Background(), os.Args[1:])
 	if err != nil {
 		if err != errPrintedError {
-			errors.Print(os.Stderr, err, &errors.Config{
-				Cwd: cwd,
-			})
+			fmt.Fprintln(os.Stderr, err)
 		}
 		return 1
 	}
