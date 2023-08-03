@@ -209,7 +209,7 @@ func run(ctx context.Context, name string, args ...string) (string, error) {
 	out, err := cmd.Output()
 	if err != nil {
 		if err, _ := err.(*exec.ExitError); err != nil {
-			// stderr was captured by Output
+			// Cmd.Output populates ExitError.Stderr.
 			return "", fmt.Errorf("failed to run %q: %v:\n%s", cmd.Args, err, err.Stderr)
 		}
 		return "", fmt.Errorf("failed to run %q: %v", cmd.Args, err)
