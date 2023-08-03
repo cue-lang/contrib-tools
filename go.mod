@@ -3,11 +3,11 @@ module github.com/cue-sh/tools
 go 1.20
 
 require (
+	github.com/andygrunwald/go-gerrit v0.0.0-20230628115649-c44fe2fbf2ca
 	github.com/google/go-cmp v0.5.9
 	github.com/google/go-github/v53 v53.2.0
 	github.com/shurcooL/graphql v0.0.0-20230722043721-ed46e5a46466
 	github.com/spf13/cobra v1.7.0
-	golang.org/x/build v0.0.0-20230803004431-0ffd0a3c2eeb
 	golang.org/x/oauth2 v0.10.0
 	golang.org/x/sync v0.3.0
 	golang.org/x/text v0.11.0

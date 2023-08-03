@@ -22,9 +22,9 @@ import (
 	"os"
 	"strings"
 
+	"github.com/andygrunwald/go-gerrit"
 	"github.com/cue-sh/tools/internal/codereviewcfg"
 	"github.com/google/go-github/v53/github"
-	"golang.org/x/build/gerrit"
 )
 
 // eventType values define an enumeration of the various
@@ -129,7 +129,10 @@ func loadConfig(ctx context.Context) (*config, error) {
 		return nil, err
 	}
 	res.githubClient = github.NewClient(auth.Client())
-	res.gerritClient = gerrit.NewClient(res.gerritURL, gerrit.NoAuth)
+	res.gerritClient, err = gerrit.NewClient(res.gerritURL, nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return &res, nil
 }
