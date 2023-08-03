@@ -22,7 +22,7 @@ import (
 	"strings"
 	"sync"
 
-	"golang.org/x/build/gerrit"
+	"github.com/andygrunwald/go-gerrit"
 )
 
 var (
@@ -243,8 +243,8 @@ func (c *cltrigger) triggerBuilds(revs []revision) error {
 }
 
 func (c *cltrigger) triggerBuild(rev revision) error {
-	in, err := c.cfg.gerritClient.GetChange(context.Background(), rev.changeID, gerrit.QueryChangesOpt{
-		Fields: []string{"ALL_REVISIONS"},
+	in, _, err := c.cfg.gerritClient.Changes.GetChange(rev.changeID, &gerrit.ChangeOptions{
+		AdditionalFields: []string{"ALL_REVISIONS"},
 	})
 	if err != nil {
 		// Note that this may be a "change not found" error when the changeID is
@@ -263,8 +263,8 @@ func (c *cltrigger) triggerBuild(rev revision) error {
 	}
 
 	return c.builder(repositoryDispatchPayload{
-		CL:           in.ChangeNumber,
-		Patchset:     revision.PatchSetNumber,
+		CL:           in.Number,
+		Patchset:     revision.Number,
 		TargetBranch: in.Branch,
 		Ref:          revision.Ref,
 	})
