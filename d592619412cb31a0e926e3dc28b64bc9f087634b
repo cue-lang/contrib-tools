@@ -36,6 +36,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "6082c247_289dd775",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-09-25T10:51:45Z",
+      "side": 1,
+      "message": "Technically possible to reset the label via `git push`, per https://gerrit-review.googlesource.com/Documentation/user-upload.html#review_labels, but that would be some extra effort as part of \"mail\". For now SGTM to get this unblocked.",
+      "parentUuid": "6ed1e8aa_352cd719",
+      "revId": "d592619412cb31a0e926e3dc28b64bc9f087634b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "7895139b_2040bdf8",
