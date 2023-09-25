@@ -54,6 +54,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "68156f1d_1fe997bf",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2023-09-25T11:19:42Z",
+      "side": 1,
+      "message": "Per our offline exchange, from my experimentation it is only possible to change a label if there is a commit (or commits) to push. Otherwise the server rejects the push as \"nothing to do\"",
+      "parentUuid": "6082c247_289dd775",
+      "revId": "d592619412cb31a0e926e3dc28b64bc9f087634b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "7895139b_2040bdf8",
