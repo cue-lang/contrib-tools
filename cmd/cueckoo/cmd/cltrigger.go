@@ -244,12 +244,28 @@ func (c *cltrigger) triggerBuilds(revs []revision) error {
 
 func (c *cltrigger) triggerBuild(rev revision) error {
 	in, _, err := c.cfg.gerritClient.Changes.GetChange(rev.changeID, &gerrit.ChangeOptions{
-		AdditionalFields: []string{"ALL_REVISIONS"},
+		AdditionalFields: []string{"ALL_REVISIONS", "LABELS"},
 	})
 	if err != nil {
 		// Note that this may be a "change not found" error when the changeID is
 		// an ambiguous identifier. See [revision.changeID].
 		return fmt.Errorf("failed to get current revision information: %v", err)
+	}
+
+	// Do not trigger trybots when we already have a request or result for the
+	// trybots.  But only do so we do not have the force flag.
+	if !flagForce.Bool(c.cmd) {
+		// Order is significant here; check the request for a trybot first
+		for _, label := range []string{"Run-TryBot", "TryBot-Result"} {
+			if tbResult, ok := in.Labels[label]; ok {
+				for _, approval := range tbResult.All {
+					// We are looking for a score of 1, regardless of from who
+					if approval.Value == 1 {
+						return nil
+					}
+				}
+			}
+		}
 	}
 
 	commit := rev.revision
