@@ -244,7 +244,7 @@ func (c *cltrigger) triggerBuilds(revs []revision) error {
 
 func (c *cltrigger) triggerBuild(rev revision) error {
 	in, _, err := c.cfg.gerritClient.Changes.GetChange(rev.changeID, &gerrit.ChangeOptions{
-		AdditionalFields: []string{"ALL_REVISIONS"},
+		AdditionalFields: []string{"ALL_REVISIONS", "LABELS"},
 	})
 	if err != nil {
 		// Note that this may be a "change not found" error when the changeID is
@@ -260,6 +260,32 @@ func (c *cltrigger) triggerBuild(rev revision) error {
 	revision, ok := in.Revisions[commit]
 	if !ok {
 		return fmt.Errorf("change %q does not know about revision %q; did you forget to run git codereview mail?", rev.changeID, commit)
+	}
+
+	// If we do not have the --force flag, only trigger trybots when we do not
+	// have a result for the trybots.
+	//
+	// Labels are attached to the change itself, not revisions. There is logic
+	// to reset labels when new revisions are added, logic that removes the
+	// TryBot-Result when a new patchset is added.
+	//
+	// So to be safe, we can only skip the trybots if the revision we requested
+	// is the current (latest) revision, and the change in question has
+	// TryBotResult == +1.
+	isCurrent := rev.revision == in.CurrentRevision
+	if isCurrent && !flagForce.Bool(c.cmd) {
+		// Order is significant here; check the request for a trybot first
+		if tbResult, ok := in.Labels["TryBot-Result"]; ok {
+			for _, approval := range tbResult.All {
+				// We are looking for a score of 1. Repo config limits the
+				// people who can vote on this label, hence we don't care
+				// who actually voted because it can only have been someone
+				// with permission to do so.
+				if approval.Value == 1 {
+					return nil
+				}
+			}
+		}
 	}
 
 	return c.builder(repositoryDispatchPayload{
