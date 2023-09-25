@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9f4ab1e5_16c47c74",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-09-25T08:34:47Z",
+      "side": 1,
+      "message": "Assuming that our devs can remove result labels, we could then avoid the \"force\" flag - to force a re-run, you\u0027d remove the label and tun the command.\n\nThis is the same Go does, and there is one less knob to know about. Plus, once we switch to a \"pure labels\" approach, we won\u0027t have a way to pass a \"force\" flag anymore, so we\u0027ll need this method anyway - better switch to it now IMO.",
+      "revId": "d592619412cb31a0e926e3dc28b64bc9f087634b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7895139b_2040bdf8",
+        "filename": "cmd/cueckoo/cmd/cltrigger.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 280,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-09-25T08:34:47Z",
+      "side": 1,
+      "message": "whom? :)",
+      "revId": "d592619412cb31a0e926e3dc28b64bc9f087634b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
