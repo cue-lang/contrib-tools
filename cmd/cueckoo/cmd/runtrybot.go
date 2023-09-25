@@ -24,6 +24,7 @@ import (
 const (
 	flagChange           flagName = "change"
 	flagRunTrybotNoUnity flagName = "nounity"
+	flagForce            flagName = "force"
 )
 
 // newRuntrybotCmd creates a new runtrybot command
@@ -60,6 +61,7 @@ If the --nounity flag is provided, only a trybot run is triggered.
 	}
 	cmd.Flags().Bool(string(flagChange), false, "interpret arguments as change numbers or IDs")
 	cmd.Flags().Bool(string(flagRunTrybotNoUnity), false, "do not simultaenously trigger unity build")
+	cmd.Flags().BoolP(string(flagForce), string(flagForce[0]), false, "force the trybots to run, ignoring any results")
 	return cmd
 }
 
