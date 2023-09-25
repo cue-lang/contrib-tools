@@ -20,6 +20,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "6ed1e8aa_352cd719",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2023-09-25T08:49:46Z",
+      "side": 1,
+      "message": "I\u0027m not convinced we don\u0027t want the flag. We could/should absolutely support the triggering of the label-based trybots by the \"edge\" that is the addition of the flag, giving devs the ability to remove the vote. But I will always want the ability to trigger (and force) things from the command line: I\u0027m not clear without a `--force` flag by what means I would indicate that I want to force?",
+      "parentUuid": "9f4ab1e5_16c47c74",
+      "revId": "d592619412cb31a0e926e3dc28b64bc9f087634b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "7895139b_2040bdf8",
         "filename": "cmd/cueckoo/cmd/cltrigger.go",
         "patchSetId": 2
@@ -31,6 +49,24 @@
       "writtenOn": "2023-09-25T08:34:47Z",
       "side": 1,
       "message": "whom? :)",
+      "revId": "d592619412cb31a0e926e3dc28b64bc9f087634b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c7712bc0_bd337f74",
+        "filename": "cmd/cueckoo/cmd/cltrigger.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 280,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2023-09-25T08:49:46Z",
+      "side": 1,
+      "message": "Reworded to be a bit more precise.",
+      "parentUuid": "7895139b_2040bdf8",
       "revId": "d592619412cb31a0e926e3dc28b64bc9f087634b",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
