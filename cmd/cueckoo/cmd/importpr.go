@@ -28,6 +28,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// A third comment
 const (
 	flagUpdate flagName = "update"
 )
