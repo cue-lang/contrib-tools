@@ -21,6 +21,7 @@ import (
 	"github.com/cue-sh/tools/cmd/cueckoo/cmd"
 )
 
+// Test
 func main() {
 	os.Exit(cmd.Main())
 }
