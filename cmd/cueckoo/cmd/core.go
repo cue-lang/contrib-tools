@@ -29,6 +29,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// Another comment
 type panicError struct {
 	Err error
 }
