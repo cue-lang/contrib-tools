@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "11b56c6d_0e7b22e9",
+        "filename": "cmd/cueckoo/cmd/core.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-10-05T14:37:14Z",
+      "side": 1,
+      "message": "typo!!!!",
+      "revId": "9d50faa30fa030b60d08242ef562bdc712d07001",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
