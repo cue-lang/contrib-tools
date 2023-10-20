@@ -200,7 +200,6 @@ func importPRDef(c *Command, args []string) error {
 	log.Printf("When you're happy with the commit, run: git-codereview mail")
 	log.Printf("Remember to ensure that the commit contains:")
 	log.Printf("\tFixes #N. (if it fixes an open issue)")
-	log.Printf("\tCloses #%d as merged.", prNumber)
 	return nil
 }
 
