@@ -45,13 +45,14 @@ unity for all of them.
 If the --normal flag is provided, then the list of arguments is interpreted as
 versions understood by unity.
 
-unity requires GITHUB_USER and GITHUB_PAT environment variables to be set with
-your GitHub username and personal acccess token respectively. The personal
-access token requires the "repo" scope, since Unity is a private repository.
+runtrybot needs your GitHub username and a personal acccess token
+with the "repo" scope. You can configure them via your git credential helper,
+or by setting the GITHUB_USER and GITHUB_PAT environment variables.
+Note that the personal access token should be "classic"; GitHub's new
+fine-grained tokens are still in beta and haven't been tested to work here.
 `,
 		RunE: mkRunE(c, unityDef),
 	}
-	cmd.Flags().Bool(string(flagChange), false, "interpret arguments as change numbers or IDs")
 	cmd.Flags().Bool(string(flagUnityVersions), false, "pass arguments to unity as versions")
 	return cmd
 }
@@ -60,10 +61,6 @@ func unityDef(cmd *Command, args []string) error {
 	cfg, err := loadConfig(cmd.Context())
 	if err != nil {
 		return err
-	}
-
-	if flagUnityVersions.Bool(cmd) && flagChange.Bool(cmd) {
-		return fmt.Errorf("cannot supply --change and --versions")
 	}
 
 	// If we are passed --normal, interpret all args as versions to be passed to
