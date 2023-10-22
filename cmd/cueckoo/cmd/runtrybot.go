@@ -22,7 +22,6 @@ import (
 )
 
 const (
-	flagChange           flagName = "change"
 	flagRunTrybotNoUnity flagName = "nounity"
 	flagForce            flagName = "force"
 )
@@ -35,23 +34,17 @@ func newRuntrybotCmd(c *Command) *cobra.Command {
 		Long: `
 Usage of runtrybot:
 
-	runtrybot [--change] [--nounity] [ARGS...]
+	runtrybot [--nounity] [ARGS...]
 
 Triggers trybot and unity runs for its arguments.
 
 When run with no arguments, runtrybot derives a revision and change ID for each
 pending commit in the current branch. If multiple pending commits are found,
-you must either specify which commits to run, or specify HEAD to run the
+you must either specify which commits or CLs to run, or specify HEAD to run the
 trybots for all of them.
 
-If the --change flag is provide, then the list of arguments is interpreted as
-change numbers or IDs, and the latest revision from each of those changes is
-assumed.
-
-runtrybot requires GITHUB_USER and GITHUB_PAT environment variables to be set
-with your GitHub username and personal acccess token respectively. The personal
-access token requires the "repo" scope, since Unity is a private repository.
-
+runtrybot needs your GitHub username and a personal acccess token with the "repo" scope.
+You can configure them via your git credential helper, or by setting GITHUB_USER and GITHUB_PAT.
 Note that the personal access token should be "classic"; GitHub's new
 fine-grained tokens are still in beta and haven't been tested to work here.
 
@@ -59,7 +52,6 @@ If the --nounity flag is provided, only a trybot run is triggered.
 `,
 		RunE: mkRunE(c, runtrybotDef),
 	}
-	cmd.Flags().Bool(string(flagChange), false, "interpret arguments as change numbers or IDs")
 	cmd.Flags().Bool(string(flagRunTrybotNoUnity), false, "do not simultaenously trigger unity build")
 	cmd.Flags().BoolP(string(flagForce), string(flagForce[0]), false, "force the trybots to run, ignoring any results")
 	return cmd

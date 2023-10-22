@@ -45,28 +45,50 @@ func newCLTrigger(cmd *Command, cfg *config, b builder) *cltrigger {
 	}
 }
 
+// Per https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-id,
+// a change ID can be in multiple forms.
+// We only really care about CL numbers and Change-ID identifiers from git commit trailers,
+// since those are what a human user is most likely going to find useful.
+// The long forms, like "project~branch~I1234..." are far too cumbersome.
+var rxChangeID = regexp.MustCompile(`^[1-9][0-9]{3,}|I[0-9a-f]{40}$`)
+
 func (c *cltrigger) run() (err error) {
 	var changeIDs []revision
-	args := make(map[string]bool)
-	for _, a := range c.cmd.Flags().Args() {
-		args[a] = true
+	args := c.cmd.Flags().Args()
+	derive := true
+	for _, arg := range args {
+		if rxChangeID.MatchString(arg) {
+			derive = false
+		} else if !derive {
+			return fmt.Errorf("cannot mix change IDs and git refs")
+		}
 	}
-	if flagChange.Bool(c.cmd) {
-		if len(args) == 0 {
-			return fmt.Errorf("must provide at least one change number of ID")
-		}
-		for a := range args {
-			changeIDs = append(changeIDs, revision{
-				changeID: a,
-			})
-		}
-	} else {
+	if derive {
 		changeIDs, err = c.deriveChangeIDs(args)
 		if err != nil {
 			return err
 		}
+	} else {
+		if len(args) == 0 {
+			return fmt.Errorf("must provide at least one change number of ID")
+		}
+		for _, a := range args {
+			changeIDs = append(changeIDs, revision{
+				changeID: a,
+			})
+		}
 	}
 	return c.triggerBuilds(changeIDs)
+}
+
+// TODO: replace once we can use slices.Contains
+func slicesContains[S ~[]E, E comparable](s S, v E) bool {
+	for i := range s {
+		if v == s[i] {
+			return true
+		}
+	}
+	return false
 }
 
 // deriveChangeIDs determines a list of change IDs for the supplied args (if
@@ -74,7 +96,7 @@ func (c *cltrigger) run() (err error) {
 // Essentially however we try to follow the semantics of git-codereview:
 //
 // https://pkg.go.dev/golang.org/x/review/git-codereview
-func (c *cltrigger) deriveChangeIDs(args map[string]bool) (res []revision, err error) {
+func (c *cltrigger) deriveChangeIDs(args []string) (res []revision, err error) {
 	ctx := context.TODO()
 	// Work out the branchpoint
 	bp, err := run(ctx, "git", "codereview", "branchpoint")
@@ -91,10 +113,11 @@ func (c *cltrigger) deriveChangeIDs(args map[string]bool) (res []revision, err e
 	if len(pendingCommits) == 0 {
 		return nil, fmt.Errorf("no pending commits")
 	}
-	if args["HEAD"] && len(args) > 1 {
+	argHead := slicesContains(args, "HEAD")
+	if argHead && len(args) > 1 {
 		return nil, fmt.Errorf("HEAD can only be supplied as an argument by itself")
 	}
-	if !args["HEAD"] && len(pendingCommits) > 1 && len(args) == 0 {
+	if !argHead && len(pendingCommits) > 1 && len(args) == 0 {
 		return nil, fmt.Errorf("must specify commits as arguments or use HEAD for everything")
 	}
 	addRevision := func(pc commit) error {
@@ -124,7 +147,7 @@ func (c *cltrigger) deriveChangeIDs(args map[string]bool) (res []revision, err e
 		})
 		return nil
 	}
-	if args["HEAD"] || len(args) == 0 && len(pendingCommits) == 1 {
+	if argHead || len(args) == 0 && len(pendingCommits) == 1 {
 		// Verify all
 		for _, pc := range pendingCommits {
 			if err := addRevision(pc); err != nil {
@@ -137,7 +160,7 @@ func (c *cltrigger) deriveChangeIDs(args map[string]bool) (res []revision, err e
 
 		// We verify each of the arguments
 	EachArg:
-		for h := range args {
+		for _, h := range args {
 			// Resolve the arg and ensure we have a matching pending commit
 			// and ensure we have a single one
 			commits, err := resolveCommits(ctx, "-1", h)
@@ -176,6 +199,9 @@ func resolveCommits(ctx context.Context, args ...string) ([]commit, error) {
 	commitStream, err := run(ctx, cmd[0], cmd[1:]...)
 	if err != nil {
 		return nil, err
+	}
+	if commitStream == "" {
+		return nil, fmt.Errorf("%q resulted in no git commits", args)
 	}
 
 	var commits []commit
