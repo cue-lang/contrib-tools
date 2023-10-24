@@ -18,6 +18,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "693a2b3e_6b8cc286",
+        "filename": "cmd/cueckoo/cmd/runtrybot.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-10-24T15:28:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0abdff38_4780c0e9",
+      "revId": "7611d862f46cec717140400bd5b9cea0a0a10d31",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "0f536426_3ea5e5be",
@@ -31,6 +49,24 @@
       "writtenOn": "2023-10-23T05:01:15Z",
       "side": 1,
       "message": "Minor nit on wrapping, given that this will not auto-flow/render in the terminal",
+      "revId": "7611d862f46cec717140400bd5b9cea0a0a10d31",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0b5f900d_da2135be",
+        "filename": "cmd/cueckoo/cmd/unity.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-10-24T15:28:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0f536426_3ea5e5be",
       "revId": "7611d862f46cec717140400bd5b9cea0a0a10d31",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
