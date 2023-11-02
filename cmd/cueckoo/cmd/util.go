@@ -121,24 +121,24 @@ func loadConfig(ctx context.Context) (*config, error) {
 		}
 	}
 
-	githubUser, githubPassword, err := gitCredentials(ctx, githubURL)
-	if githubUser == "" || githubPassword == "" || err != nil {
-		// Fall back to the manual env vars.
-		githubUser = os.Getenv("GITHUB_USER")
-		githubPassword = os.Getenv("GITHUB_PAT")
-		if githubUser == "" || githubPassword == "" {
+	// Prefer the manual env vars if both are set.
+	githubUser := os.Getenv("GITHUB_USER")
+	githubPassword := os.Getenv("GITHUB_PAT")
+	if githubUser == "" || githubPassword == "" {
+		githubUser, githubPassword, err = gitCredentials(ctx, githubURL)
+		if err != nil {
 			return nil, fmt.Errorf("configure a git credential helper or set GITHUB_USER and GITHUB_PAT")
 		}
 	}
 	githubAuth := github.BasicAuthTransport{Username: githubUser, Password: githubPassword}
 	res.githubClient = github.NewClient(githubAuth.Client())
 
-	gerritUser, gerritPassword, err := gitCredentials(ctx, gerritURL)
-	if gerritUser == "" || gerritPassword == "" || err != nil {
-		// Fall back to the manual env vars.
-		gerritUser = os.Getenv("GERRIT_USER")
-		gerritPassword = os.Getenv("GERRIT_PASSWORD")
-		if gerritUser == "" || gerritPassword == "" {
+	// Prefer the manual env vars if both are set.
+	gerritUser := os.Getenv("GERRIT_USER")
+	gerritPassword := os.Getenv("GERRIT_PASSWORD")
+	if gerritUser == "" || gerritPassword == "" {
+		gerritUser, gerritPassword, err = gitCredentials(ctx, gerritURL)
+		if err != nil {
 			return nil, fmt.Errorf("configure a git credential helper or set GERRIT_USER and GERRIT_PASSWORD")
 		}
 	}
