@@ -16,6 +16,7 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/url"
 	"regexp"
@@ -258,14 +259,7 @@ func (c *cltrigger) triggerBuilds(revs []revision) error {
 	}
 
 	wg.Wait()
-	if len(errs.errs) > 0 {
-		var msgs []string
-		for _, e := range errs.errs {
-			msgs = append(msgs, e.Error())
-		}
-		return fmt.Errorf(strings.Join(msgs, "\n"))
-	}
-	return nil
+	return errors.Join(errs.errs...)
 }
 
 func (c *cltrigger) triggerBuild(rev revision) error {
