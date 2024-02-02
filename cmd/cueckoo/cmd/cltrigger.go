@@ -51,7 +51,7 @@ func newCLTrigger(cmd *Command, cfg *config, b builder) *cltrigger {
 // We only really care about CL numbers and Change-ID identifiers from git commit trailers,
 // since those are what a human user is most likely going to find useful.
 // The long forms, like "project~branch~I1234..." are far too cumbersome.
-var rxChangeID = regexp.MustCompile(`^[1-9][0-9]{3,}|I[0-9a-f]{40}$`)
+var rxChangeID = regexp.MustCompile(`^([1-9][0-9]{3,}|I[0-9a-f]{40})$`)
 
 func (c *cltrigger) run() (err error) {
 	var changeIDs []revision
