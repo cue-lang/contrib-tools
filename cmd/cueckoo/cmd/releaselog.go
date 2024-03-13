@@ -16,7 +16,6 @@ package cmd
 
 import (
 	"fmt"
-	"sort"
 	"strings"
 
 	"github.com/google/go-github/v53/github"
@@ -54,8 +53,9 @@ func releaseLog(cmd *Command, args []string) error {
 	cmd.Flags()
 
 	if len(args) != 2 {
-		return fmt.Errorf("expected exactly two args which will be interpreted like git log $1..$2")
+		return fmt.Errorf("expected exactly two args which will be interpreted like git log $1..$2, like: v0.8.0-alpha.1 master")
 	}
+	fromRef, toRef := args[0], args[1]
 
 	cfg, err := loadConfig(cmd.Context())
 	if err != nil {
@@ -67,11 +67,9 @@ func releaseLog(cmd *Command, args []string) error {
 		Page: 1,
 	}
 
-	authors := make(map[string]bool)
-
 	// Gather commits and authors
 	for {
-		res, resp, err := cfg.githubClient.Repositories.CompareCommits(cmd.Context(), cfg.githubOwner, cfg.githubRepo, args[0], args[1], opts)
+		res, resp, err := cfg.githubClient.Repositories.CompareCommits(cmd.Context(), cfg.githubOwner, cfg.githubRepo, fromRef, toRef, opts)
 		// Check for any errors
 		if err != nil {
 			return fmt.Errorf("failed to compare commits: %w", err)
@@ -88,25 +86,7 @@ func releaseLog(cmd *Command, args []string) error {
 		opts.Page++
 	}
 
-	// Author summary
-	for _, v := range commits {
-		author := v.GetAuthor().GetLogin()
-		authors[author] = true
-	}
-	var authorList []string
-	for k := range authors {
-		authorList = append(authorList, "@"+k)
-	}
-	sort.Strings(authorList)
-	if len(authorList) > 1 {
-		authorList[len(authorList)-1] = "and " + authorList[len(authorList)-1]
-	}
-	fmt.Printf("Thank you to %s for contributing to this release!\n", strings.Join(authorList, ", "))
-
-	// Clear line before Changelog for readability
-	fmt.Println("")
-
-	fmt.Println("## Changelog")
+	fmt.Printf("<details>\n\n<summary><b>Full list of changes since %s</b></summary>\n\n", fromRef)
 	for i := len(commits) - 1; i >= 0; i-- {
 		commit := commits[i]
 		msg := commit.Commit.GetMessage()
@@ -114,6 +94,7 @@ func releaseLog(cmd *Command, args []string) error {
 		summary, _, _ := strings.Cut(msg, "\n")
 		fmt.Printf("* %s by @%s in %s\n", summary, author, commit.GetSHA())
 	}
+	fmt.Printf("\n</details>\n")
 
 	return nil
 }
