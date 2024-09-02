@@ -23,6 +23,6 @@ package github
 // in a single file, and that keeps the different in import
 // path down to a single file.
 
-import repo "github.com/cue-sh/tools/internal/ci/repo"
+import repo "github.com/cue-lang/contrib-tools/internal/ci/repo"
 
 _repo: repo

@@ -18,7 +18,7 @@ package main
 import (
 	"os"
 
-	"github.com/cue-sh/tools/cmd/cueckoo/cmd"
+	"github.com/cue-lang/contrib-tools/cmd/cueckoo/cmd"
 )
 
 func main() {
