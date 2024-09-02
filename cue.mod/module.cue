@@ -1,1 +1,1 @@
-module: "github.com/cue-sh/tools"
+module: "github.com/cue-lang/contrib-tools"

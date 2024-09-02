@@ -23,7 +23,7 @@ jobs:
           EOD
           chmod 600 ~/.netrc
       - id: payload
-        if: github.repository == 'cue-sh/tools' && (github.ref == 'refs/heads/ci/test')
+        if: github.repository == 'cue-lang/contrib-tools' && (github.ref == 'refs/heads/ci/test')
         name: Write fake payload
         run: |-
           cat <<EOD >> $GITHUB_OUTPUT
@@ -40,7 +40,7 @@ jobs:
           git config user.name cueckoo
           git config user.email cueckoo@gmail.com
           git config http.https://github.com/.extraheader "AUTHORIZATION: basic $(echo -n cueckoo:${{ secrets.CUECKOO_GITHUB_PAT }} | base64)"
-          git remote add origin  https://review.gerrithub.io/a/cue-sh/tools
+          git remote add origin  https://review.gerrithub.io/a/cue-lang/contrib-tools
 
           git fetch origin ${{ fromJSON(steps.payload.outputs.value).ref }}
           git checkout -b local_${{ fromJSON(steps.payload.outputs.value).targetBranch }} FETCH_HEAD
@@ -71,7 +71,7 @@ jobs:
           success=false
           for try in {1..20}; do
           	echo "Push to trybot try $try"
-          	if git push -f https://github.com/cue-sh/tools-trybot local_${{ fromJSON(steps.payload.outputs.value).targetBranch }}:${{ fromJSON(steps.payload.outputs.value).targetBranch }}; then
+          	if git push -f https://github.com/cue-lang/contrib-tools-trybot local_${{ fromJSON(steps.payload.outputs.value).targetBranch }}:${{ fromJSON(steps.payload.outputs.value).targetBranch }}; then
           		success=true
           		break
           	fi
@@ -90,7 +90,7 @@ jobs:
           git config user.name cueckoo
           git config user.email cueckoo@gmail.com
           git config http.https://github.com/.extraheader "AUTHORIZATION: basic $(echo -n cueckoo:${{ secrets.CUECKOO_GITHUB_PAT }} | base64)"
-          git remote add origin  https://review.gerrithub.io/a/cue-sh/tools
+          git remote add origin  https://review.gerrithub.io/a/cue-lang/contrib-tools
 
           git fetch origin ${{ github.event.client_payload.ref }}
           git checkout -b local_${{ github.event.client_payload.targetBranch }} FETCH_HEAD
@@ -121,7 +121,7 @@ jobs:
           success=false
           for try in {1..20}; do
           	echo "Push to trybot try $try"
-          	if git push -f https://github.com/cue-sh/tools-trybot local_${{ github.event.client_payload.targetBranch }}:${{ github.event.client_payload.targetBranch }}; then
+          	if git push -f https://github.com/cue-lang/contrib-tools-trybot local_${{ github.event.client_payload.targetBranch }}:${{ github.event.client_payload.targetBranch }}; then
           		success=true
           		break
           	fi

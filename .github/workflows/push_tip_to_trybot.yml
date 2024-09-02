@@ -12,7 +12,7 @@ jobs:
     defaults:
       run:
         shell: bash
-    if: ${{github.repository == 'cue-sh/tools'}}
+    if: ${{github.repository == 'cue-lang/contrib-tools'}}
     steps:
       - name: Write netrc file for cueckoo Gerrithub
         run: |-
@@ -30,8 +30,8 @@ jobs:
           git config user.name cueckoo
           git config user.email cueckoo@gmail.com
           git config http.https://github.com/.extraheader "AUTHORIZATION: basic $(echo -n cueckoo:${{ secrets.CUECKOO_GITHUB_PAT }} | base64)"
-          git remote add origin https://review.gerrithub.io/a/cue-sh/tools
-          git remote add trybot https://github.com/cue-sh/tools-trybot
+          git remote add origin https://review.gerrithub.io/a/cue-lang/contrib-tools
+          git remote add trybot https://github.com/cue-lang/contrib-tools-trybot
 
           git fetch origin "${{ github.ref }}"
 
