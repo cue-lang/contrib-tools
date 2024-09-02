@@ -4,12 +4,12 @@
 package repo
 
 import (
-	"github.com/cue-sh/tools/internal/ci/base"
+	"github.com/cue-lang/contrib-tools/internal/ci/base"
 )
 
 base
 
-githubRepositoryPath: "cue-sh/tools"
+githubRepositoryPath: "cue-lang/contrib-tools"
 
 botGitHubUser:      "cueckoo"
 botGitHubUserEmail: "cueckoo@gmail.com"

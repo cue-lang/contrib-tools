@@ -1,4 +1,4 @@
-module github.com/cue-sh/tools
+module github.com/cue-lang/contrib-tools
 
 go 1.20
 

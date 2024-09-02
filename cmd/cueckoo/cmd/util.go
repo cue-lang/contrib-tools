@@ -25,7 +25,7 @@ import (
 	"strings"
 
 	"github.com/andygrunwald/go-gerrit"
-	"github.com/cue-sh/tools/internal/codereviewcfg"
+	"github.com/cue-lang/contrib-tools/internal/codereviewcfg"
 	"github.com/google/go-github/v53/github"
 )
 

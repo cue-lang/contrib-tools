@@ -21,8 +21,8 @@ import (
 
 	"tool/file"
 
-	"github.com/cue-sh/tools/internal/ci/repo"
-	"github.com/cue-sh/tools/internal/ci/github"
+	"github.com/cue-lang/contrib-tools/internal/ci/repo"
+	"github.com/cue-lang/contrib-tools/internal/ci/github"
 )
 
 _goos: string @tag(os,var=os)
