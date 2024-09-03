@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1f2148cc_5784c7f2",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1020333
+      },
+      "writtenOn": "2024-09-03T04:55:32Z",
+      "side": 1,
+      "message": "Approving on behalf of @paul@myitcv.io to confirm end-to-end flow of contributing changes in working.",
+      "revId": "fc701fdf0dc874016aca89d0771c718b74f5fcb5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
