@@ -35,7 +35,7 @@ import (
 )
 
 // Package parameters
-githubRepositoryPath:   *(URLPath & {#url: githubRepositoryURL, _}) | string
+githubRepositoryPath: *(URLPath & {#url: githubRepositoryURL, _}) | string
 githubRepositoryURL:    *("https://github.com/" + githubRepositoryPath) | string
 gerritHubHostname:      "review.gerrithub.io"
 gerritHubRepositoryURL: *("https://\(gerritHubHostname)/a/" + githubRepositoryPath) | string
@@ -55,7 +55,7 @@ botGerritHubUser:                   *botGitHubUser | string
 botGerritHubUserPasswordSecretsKey: *(strings.ToUpper(botGitHubUser) + "_GERRITHUB_PASSWORD") | string
 botGerritHubUserEmail:              *botGitHubUserEmail | string
 
-workflowFileExtension: ".yml"
+workflowFileExtension: ".yaml"
 
 linuxMachine: string
 
