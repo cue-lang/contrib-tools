@@ -6,18 +6,18 @@ name: TryBot
     branches:
       - ci/test
       - master
-  pull_request: {}
   workflow_dispatch: {}
+  pull_request: {}
 jobs:
   test:
     runs-on: ubuntu-22.04
-    defaults:
-      run:
-        shell: bash
     if: |-
       (contains(github.event.head_commit.message, '
       Dispatch-Trailer: {"type":"trybot"')) || ! (contains(github.event.head_commit.message, '
       Dispatch-Trailer: {"type":"'))
+    defaults:
+      run:
+        shell: bash --noprofile --norc -euo pipefail {0}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -78,6 +78,7 @@ jobs:
           path: |-
             ${{ steps.go-mod-cache-dir.outputs.dir }}/cache/download
             ${{ steps.go-cache-dir.outputs.dir }}
+            ~/.npm
           key: ${{ runner.os }}-1.23.x-${{ github.run_id }}
           restore-keys: ${{ runner.os }}-1.23.x
       - if: |-
@@ -88,12 +89,17 @@ jobs:
           path: |-
             ${{ steps.go-mod-cache-dir.outputs.dir }}/cache/download
             ${{ steps.go-cache-dir.outputs.dir }}
+            ~/.npm
           key: ${{ runner.os }}-1.23.x-${{ github.run_id }}
           restore-keys: ${{ runner.os }}-1.23.x
       - if: |-
           github.repository == 'cue-lang/contrib-tools' && (((github.ref == 'refs/heads/master') && (! (contains(github.event.head_commit.message, '
           Dispatch-Trailer: {"type":"')))) || github.ref == 'refs/heads/ci/test')
         run: go clean -testcache
+      - name: Install CUE
+        uses: cue-lang/setup-cue@v1.0.1
+        with:
+          version: v0.12.0-alpha.1
       - name: Early git and code sanity checks
         run: go run cuelang.org/go/internal/ci/checks@v0.11.0-0.dev.0.20240903133435-46fb300df650
       - name: Verify
