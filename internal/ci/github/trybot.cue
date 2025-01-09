@@ -16,8 +16,6 @@ package github
 
 import (
 	"list"
-
-	"github.com/SchemaStore/schemastore/src/schemas/json"
 )
 
 // The trybot workflow.
@@ -31,60 +29,58 @@ workflows: trybot: _repo.bashWorkflow & {
 		pull_request: {}
 	}
 
-	jobs: {
-		test: {
-			"runs-on": _repo.linuxMachine
+	jobs: test: {
+		"runs-on": _repo.linuxMachine
 
-			let runnerOSExpr = "runner.os"
-			let runnerOSVal = "${{ \(runnerOSExpr) }}"
-			let installGo = _repo.installGo & {
-				#setupGo: with: "go-version": _repo.latestGo
-				_
-			}
-			let _setupGoActionsCaches = _repo.setupGoActionsCaches & {
-				#goVersion: _repo.latestGo
-				#os:        runnerOSVal
-				_
-			}
-
-			// Only run the trybot workflow if we have the trybot trailer, or
-			// if we have no special trailers. Note this condition applies
-			// after and in addition to the "on" condition above.
-			if: "\(_repo.containsTrybotTrailer) || ! \(_repo.containsDispatchTrailer)"
-
-			steps: [
-				for v in _repo.checkoutCode {v},
-				for v in installGo {v},
-				for v in _setupGoActionsCaches {v},
-
-				_repo.earlyChecks,
-
-				json.#step & {
-					name: "Verify"
-					run:  "go mod verify"
-				},
-				json.#step & {
-					name: "Generate"
-					run:  "go generate ./..."
-				},
-				json.#step & {
-					name: "Test"
-					run:  "go test ./..."
-				},
-				json.#step & {
-					name: "Race test"
-					run:  "go test -race ./..."
-				},
-				json.#step & {
-					name: "staticcheck"
-					run:  "go run honnef.co/go/tools/cmd/staticcheck@v0.5.1 ./..."
-				},
-				json.#step & {
-					name: "Tidy"
-					run:  "go mod tidy"
-				},
-				_repo.checkGitClean,
-			]
+		let runnerOSExpr = "runner.os"
+		let runnerOSVal = "${{ \(runnerOSExpr) }}"
+		let installGo = _repo.installGo & {
+			#setupGo: with: "go-version": _repo.latestGo
+			_
 		}
+		let _setupGoActionsCaches = _repo.setupGoActionsCaches & {
+			#goVersion: _repo.latestGo
+			#os:        runnerOSVal
+			_
+		}
+
+		// Only run the trybot workflow if we have the trybot trailer, or
+		// if we have no special trailers. Note this condition applies
+		// after and in addition to the "on" condition above.
+		if: "\(_repo.containsTrybotTrailer) || ! \(_repo.containsDispatchTrailer)"
+
+		steps: [
+			for v in _repo.checkoutCode {v},
+			for v in installGo {v},
+			for v in _setupGoActionsCaches {v},
+
+			_repo.earlyChecks,
+
+			{
+				name: "Verify"
+				run:  "go mod verify"
+			},
+			{
+				name: "Generate"
+				run:  "go generate ./..."
+			},
+			{
+				name: "Test"
+				run:  "go test ./..."
+			},
+			{
+				name: "Race test"
+				run:  "go test -race ./..."
+			},
+			{
+				name: "staticcheck"
+				run:  "go run honnef.co/go/tools/cmd/staticcheck@v0.5.1 ./..."
+			},
+			{
+				name: "Tidy"
+				run:  "go mod tidy"
+			},
+			_repo.checkGitClean,
+		]
 	}
 }
