@@ -7,13 +7,13 @@ name: Evict caches
 jobs:
   test:
     if: ${{github.repository == 'cue-lang/contrib-tools'}}
-    runs-on: ubuntu-22.04
+    runs-on: namespace-profile-ubuntu-24-04-amd64-8x16
     defaults:
       run:
         shell: bash
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: namespacelabs/nscloud-checkout-action@v7
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0

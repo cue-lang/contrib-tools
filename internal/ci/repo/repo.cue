@@ -14,6 +14,6 @@ githubRepositoryPath: "cue-lang/contrib-tools"
 botGitHubUser:      "cueckoo"
 botGitHubUserEmail: "cueckoo@gmail.com"
 
-linuxMachine: "ubuntu-22.04"
+linuxMachine: "namespace-profile-ubuntu-24-04-amd64-8x16"
 
 latestGo: "1.23.x"

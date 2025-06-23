@@ -65,7 +65,7 @@ installGo: {
 checkoutCode: {
 	#actionsCheckout: json.#step & {
 		name: "Checkout code"
-		uses: "actions/checkout@v4"
+		uses: "namespacelabs/nscloud-checkout-action@v7"
 
 		// "pull_request" builds will by default use a merge commit,
 		// testing the PR's HEAD merged on top of the master branch.
