@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9bfea571_5043efb3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2025-06-23T15:37:21Z",
+      "side": 1,
+      "message": "ci/test run here: https://github.com/cue-lang/contrib-tools/actions/runs/15828650030/job/44615403461\n\nNote that it finished in 18s with warm caches. Old trybot runs used to take about 1m30s.",
+      "revId": "0bc84df82a7b7cec2cee3c9dfd0a3a5276a3474f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
