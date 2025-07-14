@@ -73,7 +73,7 @@ workflows: trybot: _repo.bashWorkflow & {
 				},
 				githubactions.#Step & {
 					name: "staticcheck"
-					run:  "go run honnef.co/go/tools/cmd/staticcheck@v0.5.1 ./..."
+					run:  "go run honnef.co/go/tools/cmd/staticcheck@v0.6.1 ./..."
 				},
 				githubactions.#Step & {
 					name: "Tidy"
