@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c1354de3_e9ead9d9",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1020333
+      },
+      "writtenOn": "2025-07-14T10:31:30Z",
+      "side": 1,
+      "message": "force-merging on behalf of mvdan to get past the broken CI",
+      "revId": "3e4d9225c55769dcfccc7bfa29db6708d839e6e2",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
