@@ -3,20 +3,23 @@ package base
 // This file contains aspects principally related to GitHub workflows
 
 import (
-	encjson "encoding/json"
-	"list"
+	"encoding/json"
 	"strings"
 	"strconv"
 
-	"github.com/SchemaStore/schemastore/src/schemas/json"
+	"cue.dev/x/githubactions"
 )
 
-bashWorkflow: json.#Workflow & {
-	jobs: [string]: defaults: run: shell: "bash"
+bashWorkflow: githubactions.#Workflow & {
+	// Use a custom default shell that extends the GitHub default to also fail
+	// on access to unset variables.
+	//
+	// https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#defaultsrunshell
+	jobs: [string]: defaults: run: shell: "bash --noprofile --norc -euo pipefail {0}"
 }
 
 installGo: {
-	#setupGo: json.#step & {
+	#setupGo: githubactions.#Step & {
 		name: "Install Go"
 		uses: "actions/setup-go@v5"
 		with: {
@@ -49,10 +52,15 @@ installGo: {
 		#setupGo,
 
 		{
-			json.#step & {
+			githubactions.#Step & {
 				name: "Set common go env vars"
 				run: """
 					go env -w GOTOOLCHAIN=local
+
+					case $(go env GOARCH) in
+					amd64) go env -w GOAMD64=v3 ;;   # 2013 and later; makes `go test -race` 15% faster
+					arm64) go env -w GOARM64=v8.6 ;; # Apple M2 and later
+					esac
 
 					# Dump env for good measure
 					go env
@@ -63,11 +71,11 @@ installGo: {
 }
 
 checkoutCode: {
-	#actionsCheckout: json.#step & {
+	#actionsCheckout: githubactions.#Step & {
 		name: "Checkout code"
-		uses: "namespacelabs/nscloud-checkout-action@v7"
+		uses: "actions/checkout@v4" // TODO(mvdan): switch to namespacelabs/nscloud-checkout-action@v1 once Windows supports caching
 
-		// "pull_request" builds will by default use a merge commit,
+		// "pull_request_target" builds will by default use a merge commit,
 		// testing the PR's HEAD merged on top of the master branch.
 		// For consistency with Gerrit, avoid that merge commit entirely.
 		// This doesn't affect builds by other events like "push",
@@ -90,17 +98,17 @@ checkoutCode: {
 		// per the bug report at https://github.com/MestreLion/git-tools/issues/47,
 		// so we first reset all directory timestamps to a static time as a fallback.
 		// TODO(mvdan): May be unnecessary once the Go bug above is fixed.
-		json.#step & {
+		githubactions.#Step & {
 			name: "Reset git directory modification times"
 			run:  "touch -t 202211302355 $(find * -type d)"
 		},
-		json.#step & {
+		githubactions.#Step & {
 			name: "Restore git file modification times"
 			uses: "chetan/git-restore-mtime-action@075f9bc9d159805603419d50f794bd9f33252ebe"
 		},
 
 		{
-			json.#step & {
+			githubactions.#Step & {
 				name: "Try to extract \(dispatchTrailer)"
 				id:   dispatchTrailerStepID
 				run:  """
@@ -124,7 +132,7 @@ checkoutCode: {
 
 		// Safety nets to flag if we ever have a Dispatch-Trailer slip through the
 		// net and make it to master
-		json.#step & {
+		githubactions.#Step & {
 			name: "Check we don't have \(dispatchTrailer) on a protected branch"
 			if:   "\(isProtectedBranch) && \(containsDispatchTrailer)"
 			run:  """
@@ -135,9 +143,9 @@ checkoutCode: {
 	]
 }
 
-earlyChecks: json.#step & {
+earlyChecks: githubactions.#Step & {
 	name: "Early git and code sanity checks"
-	run:  *"go run cuelang.org/go/internal/ci/checks@v0.11.0-0.dev.0.20240903133435-46fb300df650" | string
+	run:  *"go run cuelang.org/go/internal/ci/checks@v0.13.2" | string
 }
 
 curlGitHubAPI: {
@@ -148,105 +156,31 @@ curlGitHubAPI: {
 	"""#
 }
 
-setupGoActionsCaches: {
-	// #readonly determines whether we ever want to write the cache back. The
-	// writing of a cache back (for any given cache key) should only happen on a
-	// protected branch. But running a workflow on a protected branch often
-	// implies that we want to skip the cache to ensure we catch flakes early.
-	// Hence the concept of clearing the testcache to ensure we catch flakes
-	// early can be defaulted based on #readonly. In the general case the two
-	// concepts are orthogonal, hence they are kept as two parameters, even
-	// though in our case we could get away with a single parameter that
-	// encapsulates our needs.
-	#readonly:       *false | bool
-	#cleanTestCache: *!#readonly | bool
-	#goVersion:      string
-	#additionalCacheDirs: [...string]
-	#os: string
-
-	let goModCacheDirID = "go-mod-cache-dir"
-	let goCacheDirID = "go-cache-dir"
-
-	// cacheDirs is a convenience variable that includes
-	// GitHub expressions that represent the directories
-	// that participate in Go caching.
-	let cacheDirs = list.Concat([[
-		"${{ steps.\(goModCacheDirID).outputs.dir }}/cache/download",
-		"${{ steps.\(goCacheDirID).outputs.dir }}",
-	], #additionalCacheDirs])
-
-	let cacheRestoreKeys = "\(#os)-\(#goVersion)"
-
-	let cacheStep = json.#step & {
+setupGoActionsCaches: [
+	// Our runner profiles on Namespace are already configured to only update
+	// the cache when they run from one of the protected branches.
+	// We cache for Go (GOCACHE and GOMODCACHE) and for staticcheck,
+	// noting that staticcheck-action puts STATICCHECK_CACHE under runner.temp.
+	githubactions.#Step & {
+		uses: "namespacelabs/nscloud-cache-action@v1"
 		with: {
-			path: strings.Join(cacheDirs, "\n")
-
-			// GitHub actions caches are immutable. Therefore, use a key which is
-			// unique, but allow the restore to fallback to the most recent cache.
-			// The result is then saved under the new key which will benefit the
-			// next build. Restore keys are only set if the step is restore.
-			key:            "\(cacheRestoreKeys)-${{ github.run_id }}"
-			"restore-keys": cacheRestoreKeys
+			cache: "go"
+			path: """
+				${{ runner.temp }}/staticcheck
+				"""
 		}
-	}
+	},
 
-	let readWriteCacheExpr = "(\(isProtectedBranch) || \(isTestDefaultBranch))"
-
-	// pre is the list of steps required to establish and initialise the correct
-	// caches for Go-based workflows.
-	[
-		// TODO: once https://github.com/actions/setup-go/issues/54 is fixed,
-		// we could use `go env` outputs from the setup-go step.
-		json.#step & {
-			name: "Get go mod cache directory"
-			id:   goModCacheDirID
-			run:  #"echo "dir=$(go env GOMODCACHE)" >> ${GITHUB_OUTPUT}"#
-		},
-		json.#step & {
-			name: "Get go build/test cache directory"
-			id:   goCacheDirID
-			run:  #"echo "dir=$(go env GOCACHE)" >> ${GITHUB_OUTPUT}"#
-		},
-
-		// Only if we are not running in readonly mode do we want a step that
-		// uses actions/cache (read and write). Even then, the use of the write
-		// step should be predicated on us running on a protected branch. Because
-		// it's impossible for anything else to write such a cache.
-		if !#readonly {
-			cacheStep & {
-				if:   readWriteCacheExpr
-				uses: "actions/cache@v4"
-			}
-		},
-
-		cacheStep & {
-			// If we are readonly, there is no condition on when we run this step.
-			// It should always be run, becase there is no alternative. But if we
-			// are not readonly, then we need to predicate this step on us not
-			// being on a protected branch.
-			if !#readonly {
-				if: "! \(readWriteCacheExpr)"
-			}
-
-			uses: "actions/cache/restore@v4"
-		},
-
-		if #cleanTestCache {
-			// All tests on protected branches should skip the test cache.  The
-			// canonical way to do this is with -count=1. However, we want the
-			// resulting test cache to be valid and current so that subsequent CLs
-			// in the trybot repo can leverage the updated cache. Therefore, we
-			// instead perform a clean of the testcache.
-			//
-			// Critically we only want to do this in the main repo, not the trybot
-			// repo.
-			json.#step & {
-				if:  "github.repository == '\(githubRepositoryPath)' && (\(isProtectedBranch) || github.ref == 'refs/heads/\(testDefaultBranch)')"
-				run: "go clean -testcache"
-			}
-		},
-	]
-}
+	// All tests on protected branches should skip the test cache,
+	// which helps spot test flakes and bugs hidden by the caching.
+	//
+	// Critically, we don't skip the test cache on the trybot repo,
+	// so that the testing of CLs can rely on an up to date test cache.
+	githubactions.#Step & {
+		if:  "github.repository == '\(githubRepositoryPath)' && (\(isProtectedBranch) || \(isTestDefaultBranch))"
+		run: "go env -w GOFLAGS=-count=1"
+	},
+]
 
 // isProtectedBranch is an expression that evaluates to true if the
 // job is running as a result of pushing to one of protectedBranchPatterns.
@@ -270,13 +204,13 @@ isReleaseTag: {
 	(_matchPattern & {variable: "github.ref", pattern: "refs/tags/\(releaseTagPattern)"}).expr
 }
 
-checkGitClean: json.#step & {
+checkGitClean: githubactions.#Step & {
 	name: "Check that git is clean at the end of the job"
 	if:   "always()"
 	run:  "test -z \"$(git status --porcelain)\" || (git status; git diff; false)"
 }
 
-repositoryDispatch: json.#step & {
+repositoryDispatch: githubactions.#Step & {
 	#githubRepositoryPath:         *githubRepositoryPath | string
 	#botGitHubUserTokenSecretsKey: *botGitHubUserTokenSecretsKey | string
 	#arg:                          _
@@ -285,7 +219,25 @@ repositoryDispatch: json.#step & {
 
 	name: string
 	run:  #"""
-			\#(_curlGitHubAPI) --fail --request POST --data-binary \#(strconv.Quote(encjson.Marshal(#arg))) https://api.github.com/repos/\#(#githubRepositoryPath)/dispatches
+			\#(_curlGitHubAPI) --fail --request POST --data-binary \#(strconv.Quote(json.Marshal(#arg))) https://api.github.com/repos/\#(#githubRepositoryPath)/dispatches
+			"""#
+}
+
+workflowDispatch: githubactions.#Step & {
+	#githubRepositoryPath:         *githubRepositoryPath | string
+	#botGitHubUserTokenSecretsKey: *botGitHubUserTokenSecretsKey | string
+	#workflowID:                   string
+
+	// params are defined per https://docs.github.com/en/rest/actions/workflows?apiVersion=2022-11-28#create-a-workflow-dispatch-event
+	#params: *{
+		ref: defaultBranch
+	} | _
+
+	_curlGitHubAPI: curlGitHubAPI & {#tokenSecretsKey: #botGitHubUserTokenSecretsKey, _}
+
+	name: string
+	run:  #"""
+			\#(_curlGitHubAPI) --fail --request POST --data-binary \#(strconv.Quote(json.Marshal(#params))) https://api.github.com/repos/\#(#githubRepositoryPath)/actions/workflows/\#(#workflowID)/dispatches
 			"""#
 }
 
@@ -348,3 +300,9 @@ containsUnityTrailer: containsDispatchTrailer & {
 }
 
 _dispatchTrailerVariable: "github.event.head_commit.message"
+
+loginCentralRegistry: githubactions.#Step & {
+	#cueCommand:      *cueCommand | string
+	#tokenExpression: *"${{ secrets.\(unprivilegedBotGitHubUserCentralRegistryTokenSecretsKey) }}" | string
+	run:              "\(#cueCommand) login --token=\(#tokenExpression)"
+}
