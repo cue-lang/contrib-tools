@@ -4,7 +4,7 @@
 package repo
 
 import (
-	"github.com/cue-lang/contrib-tools/internal/ci/base"
+	"github.com/cue-lang/tmp/internal/ci/base"
 )
 
 base
@@ -13,7 +13,5 @@ githubRepositoryPath: "cue-lang/contrib-tools"
 
 botGitHubUser:      "cueckoo"
 botGitHubUserEmail: "cueckoo@gmail.com"
-
-linuxMachine: "ns-linux-amd64"
 
 latestGo: "1.24.x"

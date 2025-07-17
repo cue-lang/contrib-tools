@@ -16,8 +16,6 @@ package github
 
 import (
 	"list"
-
-	"cue.dev/x/githubactions"
 )
 
 // The trybot workflow.
@@ -48,34 +46,31 @@ workflows: trybot: _repo.bashWorkflow & {
 			steps: [
 				for v in _repo.checkoutCode {v},
 				for v in installGo {v},
-				githubactions.#Step & {
-					uses: "namespacelabs/nscloud-cache-action@v1"
-					with: cache: "go"
-				},
+				for v in _repo.setupCaches {v},
 
 				_repo.earlyChecks,
 
-				githubactions.#Step & {
+				{
 					name: "Verify"
 					run:  "go mod verify"
 				},
-				githubactions.#Step & {
+				{
 					name: "Generate"
 					run:  "go generate ./..."
 				},
-				githubactions.#Step & {
+				{
 					name: "Test"
 					run:  "go test ./..."
 				},
-				githubactions.#Step & {
+				{
 					name: "Race test"
 					run:  "go test -race ./..."
 				},
-				githubactions.#Step & {
+				{
 					name: "staticcheck"
 					run:  "go run honnef.co/go/tools/cmd/staticcheck@v0.6.1 ./..."
 				},
-				githubactions.#Step & {
+				{
 					name: "Tidy"
 					run:  "go mod tidy"
 				},

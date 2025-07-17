@@ -7,6 +7,8 @@ name: TryBot
       - ci/test
       - master
   pull_request: {}
+  schedule:
+    - cron: 0 2 * * *
   workflow_dispatch: {}
 jobs:
   test:
@@ -69,9 +71,15 @@ jobs:
 
           # Dump env for good measure
           go env
-      - uses: namespacelabs/nscloud-cache-action@v1
+      - if: github.event_name != 'schedule' && matrix.runner != 'ns-windows-amd64'
+        uses: namespacelabs/nscloud-cache-action@v1
         with:
           cache: go
+          path: ${{ runner.temp }}/staticcheck
+      - if: |-
+          github.repository == 'cue-lang/contrib-tools' && (((github.ref == 'refs/heads/master') && (! (contains(github.event.head_commit.message, '
+          Dispatch-Trailer: {"type":"')))) || (github.ref == 'refs/heads/ci/test'))
+        run: go env -w GOFLAGS=-count=1
       - name: Early git and code sanity checks
         run: go run cuelang.org/go/internal/ci/checks@v0.13.2
       - name: Verify
