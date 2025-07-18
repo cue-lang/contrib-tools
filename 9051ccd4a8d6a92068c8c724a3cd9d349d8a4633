@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "33f8288c_beacff3d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2025-07-18T10:41:25Z",
+      "side": 1,
+      "message": "This is an argument for making the `ci_tool` part of the CUE module.",
+      "revId": "9051ccd4a8d6a92068c8c724a3cd9d349d8a4633",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
