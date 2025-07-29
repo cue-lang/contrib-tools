@@ -29,6 +29,7 @@ import (
 var fUpdate = flag.Bool("update", false, "whether to update golden files")
 
 func TestPayloads(t *testing.T) {
+	t.FailNow()
 	must := func(dro github.DispatchRequestOptions, err error) github.DispatchRequestOptions {
 		if err != nil {
 			t.Fatalf("failed to build payload: %v", err)
