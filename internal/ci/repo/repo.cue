@@ -13,5 +13,3 @@ githubRepositoryPath: "cue-lang/contrib-tools"
 
 botGitHubUser:      "cueckoo"
 botGitHubUserEmail: "cueckoo@gmail.com"
-
-latestGo: "1.24.x"

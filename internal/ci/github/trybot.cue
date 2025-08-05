@@ -20,8 +20,6 @@ import (
 
 // The trybot workflow.
 workflows: trybot: _repo.bashWorkflow & {
-	name: _repo.trybot.name
-
 	on: {
 		push: {
 			branches: list.Concat([[_repo.testDefaultBranch], _repo.protectedBranchPatterns]) // do not run PR branches
@@ -66,14 +64,8 @@ workflows: trybot: _repo.bashWorkflow & {
 					name: "Race test"
 					run:  "go test -race ./..."
 				},
-				{
-					name: "staticcheck"
-					run:  "go run honnef.co/go/tools/cmd/staticcheck@v0.6.1 ./..."
-				},
-				{
-					name: "Tidy"
-					run:  "go mod tidy"
-				},
+				_repo.staticcheck,
+				_repo.goChecks,
 				_repo.checkGitClean,
 			]
 		}
