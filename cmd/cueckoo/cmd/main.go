@@ -77,6 +77,7 @@ func newRootCmd() *Command {
 		newImportPRCmd(c),
 		newUnityCmd(c),
 		newReleaselogCmd(c),
+		newVersionCmd(c),
 	}
 
 	for _, sub := range subCommands {
