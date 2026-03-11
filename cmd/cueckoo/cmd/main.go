@@ -68,6 +68,9 @@ func newRootCmd() *Command {
 		Use:          "cueckoo",
 		Short:        "cueckoo is a development tool for working with the CUE project",
 		SilenceUsage: true,
+		PersistentPostRun: func(_ *cobra.Command, _ []string) {
+			checkForUpdate()
+		},
 	}
 
 	c := &Command{Command: cmd, root: cmd}
