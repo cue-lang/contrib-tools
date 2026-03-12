@@ -1,0 +1,7 @@
+Code-Review+2: Paul Jolly <paul@myitcv.io>
+TryBot-Result+1: CUEcueckoo <cueckoo@cuelang.org>
+Submitted-by: Daniel Martí <mvdan@mvdan.cc>
+Submitted-at: Thu, 12 Mar 2026 08:08:31 +0000
+Reviewed-on: https://review.gerrithub.io/c/cue-lang/contrib-tools/+/1233347
+Project: cue-lang/contrib-tools
+Branch: refs/heads/master
