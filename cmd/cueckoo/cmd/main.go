@@ -81,6 +81,7 @@ func newRootCmd() *Command {
 		newUnityCmd(c),
 		newReleaselogCmd(c),
 		newVersionCmd(c),
+		newMCPCmd(c),
 	}
 
 	for _, sub := range subCommands {

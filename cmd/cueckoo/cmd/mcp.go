@@ -1,0 +1,222 @@
+// Copyright 2025 The CUE Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package cmd
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/modelcontextprotocol/go-sdk/mcp"
+	"github.com/spf13/cobra"
+)
+
+func newMCPCmd(c *Command) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "mcp",
+		Short: "Run an MCP server exposing CUE project tools",
+		Long: `Run a Model Context Protocol (MCP) server over stdio.
+
+This exposes CUE project tools (Slack thread fetching, Discord thread
+fetching, Gerrit comment fetching) as MCP tools that can be used by
+AI assistants like Claude Code.
+
+Add to Claude Code:
+
+  claude mcp add --transport stdio --scope user cueckoo -- cueckoo mcp
+
+Environment variables:
+  SLACK_TOKEN     Slack Bot or User token (xoxb-... or xoxp-...)
+  DISCORD_TOKEN   Discord Bot token
+`,
+		RunE: func(_ *cobra.Command, _ []string) error {
+			return runMCP(context.Background())
+		},
+	}
+	return cmd
+}
+
+func runMCP(ctx context.Context) error {
+	server := mcp.NewServer(&mcp.Implementation{
+		Name:    "cueckoo",
+		Version: "v0.1.0",
+	}, nil)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name: "slack_thread",
+		Description: `Fetch a Slack thread and return all messages with resolved usernames.
+
+Takes a Slack message URL (e.g. https://cuelang.slack.com/archives/C012UU8B72M/p1234567890123456)
+and returns all messages in that thread, with user IDs resolved to display names.
+
+Requires SLACK_TOKEN environment variable.`,
+	}, handleSlackThread)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name: "discord_thread",
+		Description: `Fetch a Discord thread and return all messages with resolved usernames.
+
+Takes a Discord message URL (e.g. https://discord.com/channels/953939596592424020/953939596592424023/1234567890)
+and returns all messages in that thread, with user IDs resolved to display names.
+
+Requires DISCORD_TOKEN environment variable.`,
+	}, handleDiscordThread)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name: "gerrit_comments",
+		Description: `Fetch review comments from a GerritHub change, grouped by thread with resolved state.
+
+The change argument must use one of these prefixed formats:
+
+  cl:<number>        — CL number, e.g. cl:1233340
+  changeid:<id>      — Change-Id, e.g. changeid:Ia15e97465869aa18ba2b8c9795cec18f438d7b76
+  git:<ref>          — any git ref (commit SHA, branch, tag, HEAD, HEAD~2, etc.), e.g. git:HEAD
+
+When presenting results, focus on unresolved threads as these need action. For each
+unresolved thread, summarise the feedback and suggest a concrete plan for addressing it.
+When the file /COMMIT_MSG appears as a path, present those comments as feedback on the
+commit message itself, not a source file. If all threads are resolved, report that no
+action is needed.
+
+Set unresolved_only to true to show only unresolved threads.`,
+	}, handleGerritComments)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name: "trybot_result",
+		Description: `Fetch the latest trybot (CI) result for a GerritHub change.
+
+The change argument must use one of these prefixed formats:
+
+  cl:<number>        — CL number, e.g. cl:1233340
+  changeid:<id>      — Change-Id, e.g. changeid:Ia15e97465869aa18ba2b8c9795cec18f438d7b76
+  git:<ref>          — any git ref (commit SHA, branch, tag, HEAD, HEAD~2, etc.), e.g. git:HEAD
+
+If the trybot run failed, this tool fetches the failed job logs from GitHub
+Actions and extracts the error output. Use this to understand why CI failed
+and what needs to be fixed.
+
+Requires the gh CLI to be installed and authenticated.`,
+	}, handleTrybotResult)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name: "guidance",
+		Description: `Return the latest common guidance/instructions for CUE project repos.
+
+This returns canonical instructions that should be incorporated into each
+repo's CLAUDE.md file. It covers commit message conventions, GerritHub code
+review workflows (including git-codereview usage, working with commit chains,
+editing and splitting commits, and preserving Change-Ids), CI/trybots,
+community support, testing with txtar reproductions, and CLAUDE.md structure.
+
+Call this tool when setting up a new repo or when asked to verify that
+a repo's instructions are current.`,
+	}, handleGuidance)
+
+	return server.Run(ctx, &mcp.StdioTransport{})
+}
+
+type slackThreadInput struct {
+	URL string `json:"url" jsonschema:"Slack message URL"`
+}
+
+func handleSlackThread(ctx context.Context, req *mcp.CallToolRequest, input slackThreadInput) (*mcp.CallToolResult, any, error) {
+	result, err := fetchSlackThread(input.URL)
+	if err != nil {
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{
+				&mcp.TextContent{Text: fmt.Sprintf("error: %v", err)},
+			},
+			IsError: true,
+		}, nil, nil
+	}
+	return &mcp.CallToolResult{
+		Content: []mcp.Content{
+			&mcp.TextContent{Text: result},
+		},
+	}, nil, nil
+}
+
+type discordThreadInput struct {
+	URL string `json:"url" jsonschema:"Discord message URL"`
+}
+
+func handleDiscordThread(ctx context.Context, req *mcp.CallToolRequest, input discordThreadInput) (*mcp.CallToolResult, any, error) {
+	result, err := fetchDiscordThread(input.URL)
+	if err != nil {
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{
+				&mcp.TextContent{Text: fmt.Sprintf("error: %v", err)},
+			},
+			IsError: true,
+		}, nil, nil
+	}
+	return &mcp.CallToolResult{
+		Content: []mcp.Content{
+			&mcp.TextContent{Text: result},
+		},
+	}, nil, nil
+}
+
+type guidanceInput struct{}
+
+func handleGuidance(ctx context.Context, req *mcp.CallToolRequest, input guidanceInput) (*mcp.CallToolResult, any, error) {
+	return &mcp.CallToolResult{
+		Content: []mcp.Content{
+			&mcp.TextContent{Text: commonGuidance},
+		},
+	}, nil, nil
+}
+
+type trybotResultInput struct {
+	Change string `json:"change" jsonschema:"prefixed change identifier: cl:<number>, changeid:<id>, or git:<ref>"`
+}
+
+func handleTrybotResult(ctx context.Context, req *mcp.CallToolRequest, input trybotResultInput) (*mcp.CallToolResult, any, error) {
+	result, err := fetchTrybotResult(input.Change)
+	if err != nil {
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{
+				&mcp.TextContent{Text: fmt.Sprintf("error: %v", err)},
+			},
+			IsError: true,
+		}, nil, nil
+	}
+	return &mcp.CallToolResult{
+		Content: []mcp.Content{
+			&mcp.TextContent{Text: result},
+		},
+	}, nil, nil
+}
+
+type gerritCommentsInput struct {
+	Change         string `json:"change" jsonschema:"prefixed change identifier: cl:<number>, changeid:<id>, or git:<ref>"`
+	UnresolvedOnly bool   `json:"unresolved_only,omitempty" jsonschema:"show only unresolved threads"`
+}
+
+func handleGerritComments(ctx context.Context, req *mcp.CallToolRequest, input gerritCommentsInput) (*mcp.CallToolResult, any, error) {
+	result, err := fetchGerritComments(input.Change, input.UnresolvedOnly)
+	if err != nil {
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{
+				&mcp.TextContent{Text: fmt.Sprintf("error: %v", err)},
+			},
+			IsError: true,
+		}, nil, nil
+	}
+	return &mcp.CallToolResult{
+		Content: []mcp.Content{
+			&mcp.TextContent{Text: result},
+		},
+	}, nil, nil
+}
