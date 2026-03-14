@@ -24,6 +24,30 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "bb1801c6_8f6372b3",
+        "filename": "CLAUDE.md",
+        "patchSetId": 13
+      },
+      "lineNbr": 5,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2026-03-14T04:48:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "caa23563_f1f8fd7c",
+      "range": {
+        "startLine": 5,
+        "startChar": 8,
+        "endLine": 5,
+        "endChar": 33
+      },
+      "revId": "f749903f9e186852356bfecc2001f165da677cf9",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ec1a998f_95057780",
@@ -37,6 +61,30 @@
       "writtenOn": "2026-03-14T04:33:17Z",
       "side": 1,
       "message": "This does not apply in the CUE project; this is something that only applies in the Go project setup.",
+      "range": {
+        "startLine": 103,
+        "startChar": 8,
+        "endLine": 103,
+        "endChar": 19
+      },
+      "revId": "f749903f9e186852356bfecc2001f165da677cf9",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "12be0a28_c8004844",
+        "filename": "cmd/cueckoo/cmd/guidance.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2026-03-14T04:48:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ec1a998f_95057780",
       "range": {
         "startLine": 103,
         "startChar": 8,
@@ -70,6 +118,30 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a6b132e7_ca2efd5a",
+        "filename": "cmd/cueckoo/cmd/guidance.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2026-03-14T04:48:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "865e13f7_2bcb23cc",
+      "range": {
+        "startLine": 106,
+        "startChar": 4,
+        "endLine": 106,
+        "endChar": 26
+      },
+      "revId": "f749903f9e186852356bfecc2001f165da677cf9",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e427aa51_594ae2de",
@@ -83,6 +155,30 @@
       "writtenOn": "2026-03-14T04:33:17Z",
       "side": 1,
       "message": "This does not apply in the CUE project; this is something that only applies in the Go project setup.",
+      "range": {
+        "startLine": 128,
+        "startChar": 4,
+        "endLine": 128,
+        "endChar": 25
+      },
+      "revId": "f749903f9e186852356bfecc2001f165da677cf9",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "80987594_52828a6b",
+        "filename": "cmd/cueckoo/cmd/guidance.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2026-03-14T04:48:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e427aa51_594ae2de",
       "range": {
         "startLine": 128,
         "startChar": 4,
@@ -110,6 +206,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f94a09f8_b4d15376",
+        "filename": "cmd/cueckoo/cmd/guidance.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 199,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2026-03-14T04:48:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "21edc7c5_b69f0f6e",
+      "revId": "f749903f9e186852356bfecc2001f165da677cf9",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "57d7f2f6_d2ca2d9a",
@@ -123,6 +237,30 @@
       "writtenOn": "2026-03-14T04:33:17Z",
       "side": 1,
       "message": "This guidance is too specific to the cuelang.org project and doesn\u0027t belong here.",
+      "range": {
+        "startLine": 232,
+        "startChar": 2,
+        "endLine": 232,
+        "endChar": 68
+      },
+      "revId": "f749903f9e186852356bfecc2001f165da677cf9",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "991cd3aa_34675a5c",
+        "filename": "cmd/cueckoo/cmd/guidance.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2026-03-14T04:48:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "57d7f2f6_d2ca2d9a",
       "range": {
         "startLine": 232,
         "startChar": 2,
@@ -156,6 +294,30 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "32f2de3b_80f1c1b7",
+        "filename": "cmd/cueckoo/cmd/guidance.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 238,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2026-03-14T04:48:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7ad47dea_ebd4f600",
+      "range": {
+        "startLine": 236,
+        "startChar": 0,
+        "endLine": 238,
+        "endChar": 51
+      },
+      "revId": "f749903f9e186852356bfecc2001f165da677cf9",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f0f58ef5_7037499f",
@@ -169,6 +331,30 @@
       "writtenOn": "2026-03-14T04:33:17Z",
       "side": 1,
       "message": "I think we should be clear that they follow the testscript format, yes, but also be clear which testscript CLI command we are using here. It is https://pkg.go.dev/github.com/rogpeppe/go-internal/cmd/testscript",
+      "range": {
+        "startLine": 243,
+        "startChar": 37,
+        "endLine": 243,
+        "endChar": 60
+      },
+      "revId": "f749903f9e186852356bfecc2001f165da677cf9",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "421a8090_892bb9c6",
+        "filename": "cmd/cueckoo/cmd/guidance.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 243,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2026-03-14T04:48:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f0f58ef5_7037499f",
       "range": {
         "startLine": 243,
         "startChar": 37,
