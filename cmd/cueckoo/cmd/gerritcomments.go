@@ -50,30 +50,28 @@ func fetchGerritComments(change string, unresolvedOnly bool) (string, error) {
 	// Fetch revision info to map patchset numbers to commit SHAs.
 	psCommits := fetchPatchSetCommits(changeNumber)
 
-	// Build threads: group by root comment.
-	threads := make(map[string][]gerritComment)
+	// Build threads in two passes. First pass: index all comments by ID
+	// so that the second pass can always walk in_reply_to chains to find
+	// the root, regardless of the order comments appear in the response.
 	commentMap := make(map[string]gerritComment)
-
 	for filepath, comments := range data {
 		for _, c := range comments {
 			c.filepath = filepath
 			commentMap[c.ID] = c
-
-			if c.InReplyTo == "" {
-				threads[c.ID] = append(threads[c.ID], c)
-			} else {
-				// Find root of thread.
-				root := c.InReplyTo
-				for {
-					parent, ok := commentMap[root]
-					if !ok || parent.InReplyTo == "" {
-						break
-					}
-					root = parent.InReplyTo
-				}
-				threads[root] = append(threads[root], c)
-			}
 		}
+	}
+
+	threads := make(map[string][]gerritComment)
+	for _, c := range commentMap {
+		root := c.ID
+		for {
+			parent, ok := commentMap[root]
+			if !ok || parent.InReplyTo == "" {
+				break
+			}
+			root = parent.InReplyTo
+		}
+		threads[root] = append(threads[root], c)
 	}
 
 	// Sort threads by their root comment's filepath and line for stable output.
