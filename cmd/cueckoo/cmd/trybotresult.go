@@ -58,7 +58,7 @@ func fetchTrybotResult(change string) (string, error) {
 	}
 
 	// Fetch change detail with messages.
-	body, err := gerritAPI(fmt.Sprintf("/a/changes/%s/detail?o=MESSAGES", changeNumber))
+	body, err := gerritAPIGet(fmt.Sprintf("/a/changes/%s/detail?o=MESSAGES", changeNumber))
 	if err != nil {
 		return "", err
 	}

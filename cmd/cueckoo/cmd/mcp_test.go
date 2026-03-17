@@ -165,6 +165,18 @@ func TestMCPToolsRegistered(t *testing.T) {
 		Description: "Fetch trybot CI result.",
 	}, handleTrybotResult)
 	mcp.AddTool(server, &mcp.Tool{
+		Name:        "gerrit_reply",
+		Description: "Post a draft reply to a Gerrit comment.",
+	}, handleGerritReply)
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "gerrit_update_draft",
+		Description: "Update an existing draft reply.",
+	}, handleGerritUpdateDraft)
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "gerrit_delete_draft",
+		Description: "Delete a draft reply.",
+	}, handleGerritDeleteDraft)
+	mcp.AddTool(server, &mcp.Tool{
 		Name:        "guidance",
 		Description: "Return common guidance.",
 	}, handleGuidance)
@@ -192,11 +204,14 @@ func TestMCPToolsRegistered(t *testing.T) {
 	}
 
 	wantTools := map[string]bool{
-		"slack_thread":    false,
-		"discord_thread":  false,
-		"gerrit_comments": false,
-		"trybot_result":   false,
-		"guidance":        false,
+		"slack_thread":        false,
+		"discord_thread":      false,
+		"gerrit_comments":     false,
+		"gerrit_reply":        false,
+		"gerrit_update_draft": false,
+		"gerrit_delete_draft": false,
+		"trybot_result":       false,
+		"guidance":            false,
 	}
 	for _, tool := range res.Tools {
 		if _, ok := wantTools[tool.Name]; ok {
@@ -207,6 +222,41 @@ func TestMCPToolsRegistered(t *testing.T) {
 		if !found {
 			t.Errorf("tool %q not found in server tool list", name)
 		}
+	}
+}
+
+func TestPostGerritReply_EmptyCommentID(t *testing.T) {
+	_, err := postGerritReply("cl:123", "", "Done.")
+	if err == nil {
+		t.Fatal("expected error for empty comment_id")
+	}
+}
+
+func TestPostGerritReply_EmptyMessage(t *testing.T) {
+	_, err := postGerritReply("cl:123", "abc123", "")
+	if err == nil {
+		t.Fatal("expected error for empty message")
+	}
+}
+
+func TestUpdateGerritDraft_EmptyDraftID(t *testing.T) {
+	_, err := updateGerritDraft("cl:123", "", "Done.")
+	if err == nil {
+		t.Fatal("expected error for empty draft_id")
+	}
+}
+
+func TestUpdateGerritDraft_EmptyMessage(t *testing.T) {
+	_, err := updateGerritDraft("cl:123", "abc123", "")
+	if err == nil {
+		t.Fatal("expected error for empty message")
+	}
+}
+
+func TestDeleteGerritDraft_EmptyDraftID(t *testing.T) {
+	_, err := deleteGerritDraft("cl:123", "")
+	if err == nil {
+		t.Fatal("expected error for empty draft_id")
 	}
 }
 

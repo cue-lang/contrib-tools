@@ -30,7 +30,7 @@ func fetchGerritChange(change string) (string, error) {
 		return "", err
 	}
 
-	body, err := gerritAPI(fmt.Sprintf("/a/changes/%s/?o=CURRENT_REVISION", changeNumber))
+	body, err := gerritAPIGet(fmt.Sprintf("/a/changes/%s/?o=CURRENT_REVISION", changeNumber))
 	if err != nil {
 		return "", err
 	}
