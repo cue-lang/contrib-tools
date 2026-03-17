@@ -68,8 +68,23 @@ func newRootCmd() *Command {
 		Use:          "cueckoo",
 		Short:        "cueckoo is a development tool for working with the CUE project",
 		SilenceUsage: true,
-		PersistentPostRun: func(_ *cobra.Command, _ []string) {
-			checkForUpdate()
+		PersistentPreRun: func(_ *cobra.Command, _ []string) {
+			if os.Getenv("_CUECKOO_SELF_UPDATED") != "" {
+				os.Unsetenv("_CUECKOO_SELF_UPDATED")
+				return
+			}
+			curVersion, latest, hasUpdate := checkForUpdate(false)
+			if !hasUpdate {
+				return
+			}
+			fmt.Fprintf(os.Stderr, "cueckoo: updating %s -> %s ...\n", curVersion, latest.Version)
+			if err := installUpdate(latest.Version); err != nil {
+				debugf("update install error: %v\n", err)
+				return
+			}
+			if err := reExec(); err != nil {
+				debugf("re-exec error: %v\n", err)
+			}
 		},
 	}
 
