@@ -1,0 +1,157 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "11b16427_5dd67487",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 17
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2026-03-17T10:23:59Z",
+      "side": 1,
+      "message": "The AI chose to not use any Go libraries for integrations with Gerrit/Github/Slack/Discord/etc; I guess that\u0027s fine for now as the code is relatively simple. But something to keep in mind if the complexity grows over time.",
+      "revId": "cc08e093f4edc38803d2a24d54824f23e61004fd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "79844982_2b8c6e01",
+        "filename": "cmd/cueckoo/cmd/discordthread.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2026-03-17T10:23:59Z",
+      "side": 1,
+      "message": "slices.Reverse",
+      "revId": "cc08e093f4edc38803d2a24d54824f23e61004fd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c350d525_135ef74f",
+        "filename": "cmd/cueckoo/cmd/discordthread.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2026-03-17T10:23:59Z",
+      "side": 1,
+      "message": "ask the AI to edit all the code to consistently use an http.Client with a sane timeout of e.g. 10s; otherwise the default client has no timeout so it could hang forever.\n\nthe alternative is to thread contexts into every request, which has a similar effect, but is a larger refactor. I think setting up an http client with a timeout is easier.",
+      "revId": "cc08e093f4edc38803d2a24d54824f23e61004fd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3b6575ea_4cd2b943",
+        "filename": "cmd/cueckoo/cmd/gerritcomments.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2026-03-17T10:23:59Z",
+      "side": 1,
+      "message": "use slices.Sort instead",
+      "revId": "cc08e093f4edc38803d2a24d54824f23e61004fd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5a0a74db_2e827ed4",
+        "filename": "cmd/cueckoo/cmd/gerritcomments.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2026-03-17T10:23:59Z",
+      "side": 1,
+      "message": "I would recommend that you rely on git for this, i.e:\n\n```\ngit log -1 --format\u003d%(trailers:key\u003dChange-Id,valueonly\u003dtrue)\n```\n\nnot just because you avoid some of the code here, but also because then you rely entirely on git\u0027s trailer parsing logic, so you avoid doing something slightly different by accident.",
+      "revId": "cc08e093f4edc38803d2a24d54824f23e61004fd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4c6af496_11f75003",
+        "filename": "cmd/cueckoo/cmd/gerritcomments.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 246,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2026-03-17T10:23:59Z",
+      "side": 1,
+      "message": "can this give a clear error message when no credentials are found? given that you use the authenticated `/a/` gerrit endpoints, they will definitely fail without auth credentials. so the AI and human would have an easier time if you failed here in a clear way like: \"your git credential helper lacks an entry for...\"",
+      "revId": "cc08e093f4edc38803d2a24d54824f23e61004fd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3d014fe9_f39f80a5",
+        "filename": "cmd/cueckoo/cmd/guidance.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2026-03-17T10:23:59Z",
+      "side": 1,
+      "message": "I\u0027d make these a little longer to be more realistic",
+      "revId": "cc08e093f4edc38803d2a24d54824f23e61004fd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "eccafa3a_2780468c",
+        "filename": "cmd/cueckoo/cmd/guidance.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2026-03-17T10:23:59Z",
+      "side": 1,
+      "message": "rather than paste their help texts here, my intuition would be to point out that the AI can use `-h` to learn how to use them. this way the text won\u0027t grow out of date as the tool evolves.",
+      "revId": "cc08e093f4edc38803d2a24d54824f23e61004fd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "aafbdf68_7dd4049a",
+        "filename": "cmd/cueckoo/cmd/trybotresult.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2026-03-17T10:23:59Z",
+      "side": 1,
+      "message": "nit: use `max`",
+      "revId": "cc08e093f4edc38803d2a24d54824f23e61004fd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
