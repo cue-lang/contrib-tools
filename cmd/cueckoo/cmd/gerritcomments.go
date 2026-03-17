@@ -128,11 +128,11 @@ func fetchGerritComments(change string, unresolvedOnly bool) (string, error) {
 			}
 		}
 
-		fmt.Fprintf(&b, "--- %s:%s (%s, %s) [%s] ---\n", root.filepath, line, psInfo, root.Author.Name, state)
+		fmt.Fprintf(&b, "--- %s:%s (%s, %s) [%s] id:%s ---\n", root.filepath, line, psInfo, root.Author.Name, state, root.ID)
 		fmt.Fprintln(&b, root.Message)
 
 		for _, reply := range chain[1:] {
-			fmt.Fprintf(&b, "  >> %s: %s\n", reply.Author.Name, reply.Message)
+			fmt.Fprintf(&b, "  >> %s (id:%s): %s\n", reply.Author.Name, reply.ID, reply.Message)
 		}
 		fmt.Fprintln(&b)
 	}
@@ -231,10 +231,30 @@ func resolveChangeID(changeID string) (string, error) {
 }
 
 func gerritAPI(path string) ([]byte, error) {
+	return gerritAPIRequest("GET", path, nil)
+}
+
+// gerritAPIRequest makes a Gerrit REST API request with the given HTTP method.
+// If body is non-nil, it is JSON-marshaled and sent as the request body.
+// Accepts 200 or 201 as success status codes (Gerrit returns 201 for resource creation).
+func gerritAPIRequest(method, path string, body any) ([]byte, error) {
 	fullURL := gerritBase + path
-	req, err := http.NewRequest("GET", fullURL, nil)
+
+	var reqBody io.Reader
+	if body != nil {
+		data, err := json.Marshal(body)
+		if err != nil {
+			return nil, fmt.Errorf("marshaling request body: %w", err)
+		}
+		reqBody = bytes.NewReader(data)
+	}
+
+	req, err := http.NewRequest(method, fullURL, reqBody)
 	if err != nil {
 		return nil, err
+	}
+	if body != nil {
+		req.Header.Set("Content-Type", "application/json")
 	}
 
 	// Look up credentials via git credential helper.
@@ -250,18 +270,18 @@ func gerritAPI(path string) ([]byte, error) {
 	}
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
+	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("gerrit API %s returned %s: %s", path, resp.Status, body)
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusNoContent {
+		return nil, fmt.Errorf("gerrit API %s %s returned %s: %s", method, path, resp.Status, respBody)
 	}
 
 	// Gerrit REST API prefixes JSON with )]}'<newline> — strip it.
-	body = bytes.TrimPrefix(body, []byte(")]}'"))
-	body = bytes.TrimLeft(body, "\n")
+	respBody = bytes.TrimPrefix(respBody, []byte(")]}'"))
+	respBody = bytes.TrimLeft(respBody, "\n")
 
-	return body, nil
+	return respBody, nil
 }
