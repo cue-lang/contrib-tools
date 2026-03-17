@@ -77,12 +77,13 @@ machines and available as "git codereview" (a git subcommand). Use it
 for all Gerrit interactions — do not use raw git push to Gerrit.
 
 IMPORTANT: when comparing a branch against its upstream base, always
-use "git codereview branchpoint" rather than hardcoding a branch name
-like "master" or "origin/master". There may not be a local master
-branch, and the actual divergence point may differ. For example:
+use @{u} (git shorthand for the upstream tracking branch) rather than
+hardcoding a branch name like "master" or "origin/master". There may
+not be a local master branch, and the actual divergence point may
+differ. For example:
 
-    git diff $(git codereview branchpoint)
-    git log --oneline $(git codereview branchpoint)..HEAD
+    git diff @{u}
+    git log --oneline @{u}..HEAD
 
 Key commands (use "git codereview <command> -h" for full usage):
 
@@ -91,7 +92,6 @@ Key commands (use "git codereview <command> -h" for full usage):
     git codereview sync      fetch and rebase on upstream
     git codereview rebase-work  interactive rebase over pending changes
     git codereview reword    edit pending commit messages (safe while tests run)
-    git codereview branchpoint  print where branch diverged from upstream
     git codereview hooks     install Change-Id and gofmt hooks
 
 ### GerritHub workflow
@@ -117,7 +117,7 @@ commit becomes a separate CL linked by its Change-Id.
   replaces the message entirely and can generate a new Change-Id
 - When mailing a branch with multiple commits, specify which:
   git codereview mail HEAD
-- git log $(git codereview branchpoint)..HEAD shows all pending commits
+- git log @{u}..HEAD shows all pending commits
 
 ### Editing a commit within a chain
 
@@ -194,7 +194,7 @@ relevant code rather than relying on exact line numbers.
 
 Before making any changes, first determine which commit the feedback
 applies to. A branch may have multiple pending commits, each a
-separate CL. Use git log $(git codereview branchpoint)..HEAD to see
+separate CL. Use git log @{u}..HEAD to see
 the full stack.
 
 IMPORTANT: do not edit files or stage changes until you are
