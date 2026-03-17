@@ -176,6 +176,10 @@ commits within a chain, as it preserves Change-Ids automatically.
   refers to feedback on the commit message, not a source file
 - Each review comment is like a ticket: either implement the
   suggestion or explain why not
+- After addressing each comment thread, use the gerrit_reply MCP tool
+  to post a draft reply (e.g. "Done.", "Acknowledged.", or a brief
+  description of what was changed). Drafts are not published until
+  the user reviews them and hits Reply in Gerrit
 - If all threads are resolved, report that no action is needed
 - Thread resolution is a GerritHub-side state: a thread is resolved
   when a reviewer has seen a new patchset on GerritHub and accepted
