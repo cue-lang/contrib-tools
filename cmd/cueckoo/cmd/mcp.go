@@ -134,6 +134,59 @@ The change argument can be:
 	}, handleGerritChange)
 
 	mcp.AddTool(server, &mcp.Tool{
+		Name: "gerrit_reply",
+		Description: `Post a draft reply to a GerritHub review comment.
+
+The reply is created as a draft — it is NOT published until the user reviews
+the drafts in Gerrit and hits Reply. This is safe to call freely: the user
+always has a chance to review and edit drafts before they become visible to
+the reviewer.
+
+Typical reply messages: "Done.", "Acknowledged.", or a brief description of
+what was changed to address the feedback.
+
+The change argument must use one of these prefixed formats:
+
+  cl:<number>        — CL number, e.g. cl:1233340
+  changeid:<id>      — Change-Id, e.g. changeid:Ia15e97465869aa18ba2b8c9795cec18f438d7b76
+  git:<ref>          — any git ref (commit SHA, branch, tag, HEAD, HEAD~2, etc.), e.g. git:HEAD
+
+The comment_id is the ID of the comment to reply to, as shown in the
+gerrit_comments output (e.g. id:abc123). Pass the ID without the "id:" prefix.
+
+The response includes the draft ID, which can be used with gerrit_update_draft
+to edit the draft or gerrit_delete_draft to remove it.`,
+	}, handleGerritReply)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name: "gerrit_update_draft",
+		Description: `Update an existing draft reply on a GerritHub change.
+
+Use this to edit the message of a draft that was previously created with
+gerrit_reply. The draft_id is returned in the gerrit_reply response.
+
+The change argument must use one of these prefixed formats:
+
+  cl:<number>        — CL number, e.g. cl:1233340
+  changeid:<id>      — Change-Id, e.g. changeid:Ia15e97465869aa18ba2b8c9795cec18f438d7b76
+  git:<ref>          — any git ref (commit SHA, branch, tag, HEAD, HEAD~2, etc.), e.g. git:HEAD`,
+	}, handleGerritUpdateDraft)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name: "gerrit_delete_draft",
+		Description: `Delete a draft reply from a GerritHub change.
+
+Use this to remove a draft that was previously created with gerrit_reply.
+The draft_id is returned in the gerrit_reply response.
+
+The change argument must use one of these prefixed formats:
+
+  cl:<number>        — CL number, e.g. cl:1233340
+  changeid:<id>      — Change-Id, e.g. changeid:Ia15e97465869aa18ba2b8c9795cec18f438d7b76
+  git:<ref>          — any git ref (commit SHA, branch, tag, HEAD, HEAD~2, etc.), e.g. git:HEAD`,
+	}, handleGerritDeleteDraft)
+
+	mcp.AddTool(server, &mcp.Tool{
 		Name: "guidance",
 		Description: `Return the latest common guidance/instructions for CUE project repos.
 
@@ -229,6 +282,74 @@ type gerritChangeInput struct {
 
 func handleGerritChange(ctx context.Context, req *mcp.CallToolRequest, input gerritChangeInput) (*mcp.CallToolResult, any, error) {
 	result, err := fetchGerritChange(input.Change)
+	if err != nil {
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{
+				&mcp.TextContent{Text: fmt.Sprintf("error: %v", err)},
+			},
+			IsError: true,
+		}, nil, nil
+	}
+	return &mcp.CallToolResult{
+		Content: []mcp.Content{
+			&mcp.TextContent{Text: result},
+		},
+	}, nil, nil
+}
+
+type gerritReplyInput struct {
+	Change    string `json:"change" jsonschema:"prefixed change identifier: cl:<number>, changeid:<id>, or git:<ref>"`
+	CommentID string `json:"comment_id" jsonschema:"ID of the comment to reply to (from gerrit_comments output)"`
+	Message   string `json:"message" jsonschema:"reply text (e.g. Done., Acknowledged., or a description of what was changed)"`
+}
+
+func handleGerritReply(ctx context.Context, req *mcp.CallToolRequest, input gerritReplyInput) (*mcp.CallToolResult, any, error) {
+	result, err := postGerritReply(input.Change, input.CommentID, input.Message)
+	if err != nil {
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{
+				&mcp.TextContent{Text: fmt.Sprintf("error: %v", err)},
+			},
+			IsError: true,
+		}, nil, nil
+	}
+	return &mcp.CallToolResult{
+		Content: []mcp.Content{
+			&mcp.TextContent{Text: result},
+		},
+	}, nil, nil
+}
+
+type gerritUpdateDraftInput struct {
+	Change  string `json:"change" jsonschema:"prefixed change identifier: cl:<number>, changeid:<id>, or git:<ref>"`
+	DraftID string `json:"draft_id" jsonschema:"ID of the draft to update (from gerrit_reply response)"`
+	Message string `json:"message" jsonschema:"new reply text"`
+}
+
+func handleGerritUpdateDraft(ctx context.Context, req *mcp.CallToolRequest, input gerritUpdateDraftInput) (*mcp.CallToolResult, any, error) {
+	result, err := updateGerritDraft(input.Change, input.DraftID, input.Message)
+	if err != nil {
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{
+				&mcp.TextContent{Text: fmt.Sprintf("error: %v", err)},
+			},
+			IsError: true,
+		}, nil, nil
+	}
+	return &mcp.CallToolResult{
+		Content: []mcp.Content{
+			&mcp.TextContent{Text: result},
+		},
+	}, nil, nil
+}
+
+type gerritDeleteDraftInput struct {
+	Change  string `json:"change" jsonschema:"prefixed change identifier: cl:<number>, changeid:<id>, or git:<ref>"`
+	DraftID string `json:"draft_id" jsonschema:"ID of the draft to delete (from gerrit_reply response)"`
+}
+
+func handleGerritDeleteDraft(ctx context.Context, req *mcp.CallToolRequest, input gerritDeleteDraftInput) (*mcp.CallToolResult, any, error) {
+	result, err := deleteGerritDraft(input.Change, input.DraftID)
 	if err != nil {
 		return &mcp.CallToolResult{
 			Content: []mcp.Content{

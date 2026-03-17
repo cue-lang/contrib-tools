@@ -195,6 +195,17 @@ commits within a chain, as it preserves Change-Ids automatically.
 - Each review comment is like a ticket: either implement the
   suggestion or explain why not
 - If all threads are resolved, report that no action is needed
+
+IMPORTANT: for every unresolved comment thread you address, you MUST
+post a draft reply using the gerrit_reply MCP tool. This is not
+optional — the reviewer needs to see what action was taken for each
+piece of feedback. Typical replies: "Done.", "Acknowledged.", or a
+brief description of what was changed. Drafts are not published until
+the user reviews them and hits Reply in Gerrit.
+
+The workflow for each unresolved thread is:
+1. Make the code or commit message change
+2. Post a draft reply via gerrit_reply explaining what was done
 - Thread resolution is a GerritHub-side state: a thread is resolved
   when a reviewer has seen a new patchset on GerritHub and accepted
   that it addresses their feedback. Editing files locally does not
