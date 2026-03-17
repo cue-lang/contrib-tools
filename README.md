@@ -2,6 +2,12 @@
 
 `contrib-tools` provides general code and tools for contributors to the [CUE](https://cuelang.org) project.
 
+### Issues
+
+Please file issues related to this repo at the [main CUE issue
+tracker](https://github.com/cue-lang/cue/issues) using a
+`contrib-tools:` subject prefix.
+
 ### `cueckoo` MCP server
 
 The `cueckoo` command includes an MCP server that exposes CUE project tools to AI
