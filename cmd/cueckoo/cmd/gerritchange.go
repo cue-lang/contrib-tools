@@ -61,9 +61,12 @@ func fetchGerritChange(change string) (string, error) {
 
 	fetchURL := fmt.Sprintf("%s/a/%s", gerritBase, detail.Project)
 
+	gerritURL := fmt.Sprintf("%s/c/%s/+/%d/%d", gerritBase, detail.Project, detail.Number, patchSet)
+
 	var b strings.Builder
 	fmt.Fprintf(&b, "Change: %d (patchset %d)\n", detail.Number, patchSet)
 	fmt.Fprintf(&b, "Project: %s\n", detail.Project)
+	fmt.Fprintf(&b, "URL: %s\n", gerritURL)
 	fmt.Fprintf(&b, "Fetch URL: %s\n", fetchURL)
 	fmt.Fprintf(&b, "Ref: %s\n", ref)
 	fmt.Fprintf(&b, "\nTo fetch this change:\n")
@@ -74,30 +77,45 @@ func fetchGerritChange(change string) (string, error) {
 // resolveChangeArg resolves a change argument that may be a Gerrit URL
 // or a prefixed identifier (cl:, changeid:, git:) to a change number.
 func resolveChangeArg(arg string) (string, error) {
-	// Try parsing as a URL first.
+	number, _, err := resolveChangeWithRevision(arg)
+	return number, err
+}
+
+// resolveChangeWithRevision resolves a change argument to a change number
+// and a Gerrit revision identifier. The revision is a patchset number
+// (e.g. "1", "2") if specified in the input (via URL), or "current" otherwise.
+func resolveChangeWithRevision(arg string) (number, revision string, _ error) {
 	if strings.HasPrefix(arg, "https://") || strings.HasPrefix(arg, "http://") {
 		return resolveChangeURL(arg)
 	}
-	return resolveChangeNumber(arg)
+	n, err := resolveChangeNumber(arg)
+	return n, "current", err
 }
 
-// resolveChangeURL extracts a change number from a Gerrit URL like
-// https://cue.gerrithub.io/c/cue-lang/cue/+/1233920
-func resolveChangeURL(rawURL string) (string, error) {
+// resolveChangeURL extracts a change number and optional patchset from a
+// Gerrit URL like https://cue.gerrithub.io/c/cue-lang/cue/+/1233920 or
+// https://cue.gerrithub.io/c/cue-lang/cue/+/1233920/2.
+func resolveChangeURL(rawURL string) (number, revision string, _ error) {
 	u, err := url.Parse(rawURL)
 	if err != nil {
-		return "", fmt.Errorf("parsing URL %q: %w", rawURL, err)
+		return "", "", fmt.Errorf("parsing URL %q: %w", rawURL, err)
 	}
 
 	// The URL path looks like /c/cue-lang/cue/+/1233920 or
 	// /c/cue-lang/cue/+/1233920/2 (with optional patchset).
-	// The change number is the segment after "+".
+	// The change number is the segment after "+", and the patchset
+	// (if present) is the segment after that.
 	parts := strings.Split(strings.Trim(u.Path, "/"), "/")
 	for i, p := range parts {
 		if p == "+" && i+1 < len(parts) {
-			return parts[i+1], nil
+			number = parts[i+1]
+			revision = "current"
+			if i+2 < len(parts) {
+				revision = parts[i+2]
+			}
+			return number, revision, nil
 		}
 	}
 
-	return "", fmt.Errorf("could not extract change number from URL %q", rawURL)
+	return "", "", fmt.Errorf("could not extract change number from URL %q", rawURL)
 }
