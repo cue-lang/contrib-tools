@@ -134,6 +134,35 @@ The change argument can be:
 	}, handleGerritChange)
 
 	mcp.AddTool(server, &mcp.Tool{
+		Name: "gerrit_draft_comment",
+		Description: `Post a new draft review comment on a specific file and line of a GerritHub change.
+
+This creates a new comment (not a reply to an existing comment). The draft is
+NOT published until the user reviews the drafts in Gerrit and hits Reply.
+
+Use this when performing a code review to leave feedback on specific lines of
+code. The response includes a link to the CL patchset where the user can
+review all draft comments and publish them.
+
+The change argument can be:
+
+  A Gerrit URL         — e.g. https://cue.gerrithub.io/c/cue-lang/cue/+/1233920
+  cl:<number>          — CL number, e.g. cl:1233920
+  changeid:<id>        — Change-Id, e.g. changeid:Ia15e97465869aa18ba2b8c9795cec18f438d7b76
+  git:<ref>            — any git ref, e.g. git:HEAD
+
+The patchset parameter is required — it identifies which patchset of the
+change the comment applies to. This is known from the gerrit_change output
+used to fetch the code for review.
+
+Set line to 0 to post a file-level comment (not attached to a specific line).
+
+Comments default to unresolved (requiring action from the CL author). Set
+resolved to true for FYI or informational comments that do not require
+a response.`,
+	}, handleGerritDraftComment)
+
+	mcp.AddTool(server, &mcp.Tool{
 		Name: "gerrit_reply",
 		Description: `Post a draft reply to a GerritHub review comment.
 
@@ -282,6 +311,32 @@ type gerritChangeInput struct {
 
 func handleGerritChange(ctx context.Context, req *mcp.CallToolRequest, input gerritChangeInput) (*mcp.CallToolResult, any, error) {
 	result, err := fetchGerritChange(input.Change)
+	if err != nil {
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{
+				&mcp.TextContent{Text: fmt.Sprintf("error: %v", err)},
+			},
+			IsError: true,
+		}, nil, nil
+	}
+	return &mcp.CallToolResult{
+		Content: []mcp.Content{
+			&mcp.TextContent{Text: result},
+		},
+	}, nil, nil
+}
+
+type gerritDraftCommentInput struct {
+	Change   string `json:"change" jsonschema:"change identifier: a Gerrit URL, or prefixed as cl:<number>, changeid:<id>, or git:<ref>"`
+	PatchSet string `json:"patchset" jsonschema:"patchset number to post the comment against (from gerrit_change output)"`
+	Path     string `json:"path" jsonschema:"file path to comment on (relative to repo root)"`
+	Line     int    `json:"line,omitempty" jsonschema:"line number to comment on (0 or omit for file-level comment)"`
+	Resolved bool   `json:"resolved,omitempty" jsonschema:"whether the comment is resolved/FYI (default false, meaning the comment requires action from the CL author). Set to true for informational comments."`
+	Message  string `json:"message" jsonschema:"review comment text"`
+}
+
+func handleGerritDraftComment(ctx context.Context, req *mcp.CallToolRequest, input gerritDraftCommentInput) (*mcp.CallToolResult, any, error) {
+	result, err := postGerritDraftComment(input.Change, input.PatchSet, input.Path, input.Line, input.Resolved, input.Message)
 	if err != nil {
 		return &mcp.CallToolResult{
 			Content: []mcp.Content{
