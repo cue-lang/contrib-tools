@@ -150,6 +150,24 @@ scratch — error-prone and easy to get wrong with larger changes.
 When done editing, run git rebase --continue to replay the rest of
 the chain.
 
+### Keeping commit messages accurate
+
+After any operation that changes the content of a commit — amending
+code, moving hunks between commits, squashing, or splitting — verify
+that every affected commit's message still accurately describes the
+resulting change. If it does not, update it. For the top commit, use
+git codereview change. For commits deeper in the stack, use
+git codereview reword.
+
+This applies to every commit in the pending stack, not just the one
+you edited. Rebasing, splitting, or moving code between commits can
+make neighbouring messages stale too. After completing a rebase,
+review the full stack (git log @{u}..HEAD) and fix any messages that
+no longer match their diffs (git diff HEAD~1 for each commit).
+
+Do not wait for the user to ask — this check must be automatic after
+every rebase or edit operation that changes commit content.
+
 ### Preserving Change-Ids
 
 IMPORTANT: every commit's Change-Id is a permanent link to its
