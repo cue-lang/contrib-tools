@@ -118,6 +118,22 @@ Requires the gh CLI to be installed and authenticated.`,
 	}, handleTrybotResult)
 
 	mcp.AddTool(server, &mcp.Tool{
+		Name: "gerrit_change",
+		Description: `Resolve a GerritHub change to its git fetch URL and ref.
+
+Takes a change identifier and returns the git fetch URL and ref needed to
+retrieve the change locally. The caller can then use the fetch URL and ref
+for checkout, cherry-pick, diff, or any other git operation.
+
+The change argument can be:
+
+  A Gerrit URL         — e.g. https://cue.gerrithub.io/c/cue-lang/cue/+/1233920
+  cl:<number>          — CL number, e.g. cl:1233920
+  changeid:<id>        — Change-Id, e.g. changeid:Ia15e97465869aa18ba2b8c9795cec18f438d7b76
+  git:<ref>            — any git ref, e.g. git:HEAD`,
+	}, handleGerritChange)
+
+	mcp.AddTool(server, &mcp.Tool{
 		Name: "guidance",
 		Description: `Return the latest common guidance/instructions for CUE project repos.
 
@@ -192,6 +208,27 @@ type trybotResultInput struct {
 
 func handleTrybotResult(ctx context.Context, req *mcp.CallToolRequest, input trybotResultInput) (*mcp.CallToolResult, any, error) {
 	result, err := fetchTrybotResult(input.Change)
+	if err != nil {
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{
+				&mcp.TextContent{Text: fmt.Sprintf("error: %v", err)},
+			},
+			IsError: true,
+		}, nil, nil
+	}
+	return &mcp.CallToolResult{
+		Content: []mcp.Content{
+			&mcp.TextContent{Text: result},
+		},
+	}, nil, nil
+}
+
+type gerritChangeInput struct {
+	Change string `json:"change" jsonschema:"change identifier: a Gerrit URL, or prefixed as cl:<number>, changeid:<id>, or git:<ref>"`
+}
+
+func handleGerritChange(ctx context.Context, req *mcp.CallToolRequest, input gerritChangeInput) (*mcp.CallToolResult, any, error) {
+	result, err := fetchGerritChange(input.Change)
 	if err != nil {
 		return &mcp.CallToolResult{
 			Content: []mcp.Content{
