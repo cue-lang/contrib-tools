@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d1978726_8bc48a84",
+        "filename": "cmd/cueckoo/cmd/mcp.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 334,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2026-03-19T09:52:05Z",
+      "side": 1,
+      "message": "nit: I think it would be easier to document and reason about if this was \"resolved\" with default false. I understand that you\u0027re mirroring what the Gerrit API does, but I reckon that\u0027s backwards. When you draft a reply on the web UI, it defaults to unresolved. And as a plus, at least I always struggle a little more with double negatives, so \"set unresolved to false\" makes me think for a few more seconds than just \"set resolved to true\".\n\n(and as another bonus point, you can then drop the pointer)",
+      "revId": "6d9a32a567683b37c1d478eb17d8a760fd1149e3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
