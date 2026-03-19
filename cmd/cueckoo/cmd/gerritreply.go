@@ -30,7 +30,11 @@ func postGerritReply(change, commentID, message string) (string, error) {
 		return "", fmt.Errorf("message is required")
 	}
 
-	changeNumber, err := resolveChangeNumber(change)
+	rc, err := resolveChange(change)
+	if err != nil {
+		return "", err
+	}
+	changeNumber, err := rc.Number()
 	if err != nil {
 		return "", err
 	}
@@ -103,7 +107,11 @@ func updateGerritDraft(change, draftID, message string) (string, error) {
 		return "", fmt.Errorf("message is required")
 	}
 
-	changeNumber, err := resolveChangeNumber(change)
+	rc, err := resolveChange(change)
+	if err != nil {
+		return "", err
+	}
+	changeNumber, err := rc.Number()
 	if err != nil {
 		return "", err
 	}
@@ -164,7 +172,11 @@ func deleteGerritDraft(change, draftID string) (string, error) {
 		return "", fmt.Errorf("draft_id is required")
 	}
 
-	changeNumber, err := resolveChangeNumber(change)
+	rc, err := resolveChange(change)
+	if err != nil {
+		return "", err
+	}
+	changeNumber, err := rc.Number()
 	if err != nil {
 		return "", err
 	}

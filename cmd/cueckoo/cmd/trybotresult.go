@@ -52,7 +52,11 @@ var actionRunRe = regexp.MustCompile(`https://github\.com/([^/]+)/([^/]+)/action
 // fetchTrybotResult fetches the latest trybot result for a Gerrit change.
 // If the trybot failed, it fetches the failed job logs from GitHub Actions.
 func fetchTrybotResult(change string) (string, error) {
-	changeNumber, err := resolveChangeNumber(change)
+	rc, err := resolveChange(change)
+	if err != nil {
+		return "", err
+	}
+	changeNumber, err := rc.Number()
 	if err != nil {
 		return "", err
 	}
