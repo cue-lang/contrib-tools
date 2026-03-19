@@ -33,7 +33,11 @@ func postGerritDraftComment(change, patchset, path string, line int, resolved bo
 		return "", fmt.Errorf("message is required")
 	}
 
-	changeNumber, err := resolveChangeArg(change)
+	rc, err := resolveChange(change)
+	if err != nil {
+		return "", err
+	}
+	changeNumber, err := rc.Number()
 	if err != nil {
 		return "", err
 	}

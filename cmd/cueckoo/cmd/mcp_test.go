@@ -112,9 +112,13 @@ func TestParseDiscordURL(t *testing.T) {
 	}
 }
 
-func TestResolveChangeNumber_CL(t *testing.T) {
+func TestResolveChange_CL(t *testing.T) {
 	// cl: prefix should return the number directly without any network calls.
-	got, err := resolveChangeNumber("cl:1233340")
+	rc, err := resolveChange("cl:1233340")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	got, err := rc.Number()
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -123,16 +127,48 @@ func TestResolveChangeNumber_CL(t *testing.T) {
 	}
 }
 
-func TestResolveChangeNumber_InvalidPrefix(t *testing.T) {
+func TestResolveChange_ChangeID(t *testing.T) {
+	// changeid: prefix should return the Change-Id directly without any network calls.
+	rc, err := resolveChange("changeid:Iabcdef123")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	got, err := rc.ChangeID()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got != "Iabcdef123" {
+		t.Errorf("got %q, want %q", got, "Iabcdef123")
+	}
+}
+
+func TestResolveChange_URL(t *testing.T) {
+	rc, err := resolveChange("https://cue.gerrithub.io/c/cue-lang/cue/+/1233920/2")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	got, err := rc.Number()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got != "1233920" {
+		t.Errorf("Number: got %q, want %q", got, "1233920")
+	}
+	if rc.Revision() != "2" {
+		t.Errorf("Revision: got %q, want %q", rc.Revision(), "2")
+	}
+}
+
+func TestResolveChange_InvalidPrefix(t *testing.T) {
 	// A bare value without a prefix should be rejected.
-	_, err := resolveChangeNumber("1233340")
+	_, err := resolveChange("1233340")
 	if err == nil {
 		t.Fatal("expected error for bare value without prefix")
 	}
 }
 
-func TestResolveChangeNumber_UnknownPrefix(t *testing.T) {
-	_, err := resolveChangeNumber("foo:bar")
+func TestResolveChange_UnknownPrefix(t *testing.T) {
+	_, err := resolveChange("foo:bar")
 	if err == nil {
 		t.Fatal("expected error for unknown prefix")
 	}
