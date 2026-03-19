@@ -112,9 +112,8 @@ commit becomes a separate CL linked by its Change-Id.
 - git codereview change (no arguments) amends the top commit
 - To edit a commit further down the chain, use
   git codereview rebase-work to interactively rebase
-- To edit only commit messages, always use git codereview reword.
-  Do not use git codereview change -m to rewrite a message, as it
-  replaces the message entirely and can generate a new Change-Id
+- To edit only commit messages, use git codereview reword — see
+  "Using git codereview reword" below for details
 - When mailing a branch with multiple commits, specify which:
   git codereview mail HEAD
 - git log @{u}..HEAD shows all pending commits
@@ -123,6 +122,13 @@ commit becomes a separate CL linked by its Change-Id.
 
 Use git codereview rebase-work, mark the target commit as "edit",
 then make your changes and amend with git codereview change.
+
+IMPORTANT: when starting a rebase, always derive the base from the
+current branch state. Use @{u}, HEAD~N, or a SHA from the current
+git log output — never use a SHA remembered from earlier in the
+conversation. Rebasing rewrites commit SHAs, so any SHA noted before
+a rebase is stale and must not be used as a rebase base. Using a
+stale SHA can silently duplicate, drop, or reorder commits.
 
 To extract changes from a commit (e.g. to move part of it into a
 new commit before or after), use git reset --soft HEAD^ to open the
@@ -140,33 +146,136 @@ individual hunks within a single file to a different commit:
     git reset -p HEAD somefile.go  # unstage just the hunks to move
     git commit -c ORIG_HEAD        # commit the rest (preserving the
                                    # original message and Change-Id)
-    git commit -a                  # commit the unstaged hunks as a
-                                   # new, separate change
+    git commit -a -s               # commit the unstaged hunks as a
+                                   # new, separate change (hooks add
+                                   # a fresh Change-Id)
 
 This is much better than git reset HEAD^ (without --soft), which
 unstages everything and forces you to rebuild the commit from
 scratch — error-prone and easy to get wrong with larger changes.
 
-When done editing, run git rebase --continue to replay the rest of
-the chain.
+### Preserving Change-Ids when splitting commits
+
+When splitting a commit into two during a rebase edit, one of the
+resulting commits must keep the original Change-Id (to preserve the
+link to the existing GerritHub CL). The other gets a new Change-Id.
+
+The key rule: the first commit (the one that keeps the original CL)
+must use git commit -c ORIG_HEAD. The -c flag pre-populates the
+editor with the original commit message including the Change-Id
+trailer. Edit the message to reflect the narrower scope, but keep
+the Change-Id line intact.
+
+    git reset --soft HEAD^             # open the commit
+    git reset -p HEAD somefile.go      # unstage hunks to extract
+    git commit -c ORIG_HEAD            # commit with original Change-Id
+    git commit -a -s                   # new commit, fresh Change-Id
+
+IMPORTANT: never use git commit -m "..." for the commit that must
+keep the original Change-Id. The -m flag replaces the message
+entirely, and the hooks generate a new Change-Id — orphaning the
+original CL. The -c flag is safe because it opens an editor
+pre-populated with the original message and Change-Id.
+
+For the second commit, use git commit -s (or git commit -a -s) —
+the codereview hooks will add a fresh Change-Id automatically.
+
+To drive the -c flag non-interactively, set GIT_EDITOR to a command
+that edits the message file. For example:
+
+    GIT_EDITOR="sed -i '1s/.*/cmd\/foo: narrower summary/'" \
+      git commit -c ORIG_HEAD
+
+When done editing, resume the rebase:
+
+    GIT_EDITOR=true git rebase --continue
+
+Always use GIT_EDITOR=true when resuming a rebase non-interactively.
+Without it, if the next commit in the sequence triggers a merge
+conflict, resolving the conflict and continuing would open an editor
+for the merge commit message, blocking the automation. Setting
+GIT_EDITOR=true makes it return immediately.
+
+### Amending a commit message during a rebase edit
+
+When paused at a commit marked for "edit" during a rebase, the
+commit message can be updated as part of the amend step:
+
+To keep the existing message unchanged (code-only edit):
+
+    git commit --amend --no-edit
+
+To replace the message entirely:
+
+    git commit --amend -m "new commit message"
+
+For multi-line messages or messages with special characters, write
+the message to a temporary file and use -F to avoid shell escaping
+issues:
+
+    git commit --amend -F /path/to/temp_message.txt
+
+After amending, resume the rebase with GIT_EDITOR=true as above.
 
 ### Keeping commit messages accurate
 
 After any operation that changes the content of a commit — amending
 code, moving hunks between commits, squashing, or splitting — verify
 that every affected commit's message still accurately describes the
-resulting change. If it does not, update it. For the top commit, use
-git codereview change. For commits deeper in the stack, use
-git codereview reword.
+resulting change. If it does not, update it.
 
-This applies to every commit in the pending stack, not just the one
-you edited. Rebasing, splitting, or moving code between commits can
-make neighbouring messages stale too. After completing a rebase,
-review the full stack (git log @{u}..HEAD) and fix any messages that
-no longer match their diffs (git diff HEAD~1 for each commit).
+The preferred approach is to update each commit's message at the
+point you are editing it. When paused at a commit during a rebase,
+check whether the message still matches the diff and amend it as
+part of the same step (see "Amending a commit message during a
+rebase edit" above). This avoids a separate pass after the rebase.
+
+If a rebase has already completed, review the full stack
+(git log @{u}..HEAD) and fix any messages that no longer match
+their diffs (git diff HEAD~1 for each commit).
 
 Do not wait for the user to ask — this check must be automatic after
 every rebase or edit operation that changes commit content.
+
+How to update messages depends on context:
+
+- During a rebase edit stop (preferred): amend the message as part
+  of the amend step — this is the best time to do it since you are
+  already looking at the commit.
+- For the top commit (outside a rebase): use git codereview change.
+- For commits deeper in the stack (outside a rebase): use
+  git codereview reword.
+
+### Using git codereview reword
+
+git codereview reword rewrites commit messages without changing code.
+It performs a rebase internally, so it cannot be used while another
+rebase is in progress.
+
+With no arguments, it rewords all pending commits. With arguments, it
+rewords only the specified commits:
+
+    git codereview reword              # reword all pending commits
+    git codereview reword abc123       # reword a specific commit
+
+It invokes GIT_EDITOR for each commit message. To drive it
+non-interactively, set GIT_EDITOR to a command that edits the
+message file in place. For example, to replace the first line:
+
+    GIT_EDITOR="sed -i '1s/.*/cmd\/foo: new summary line/'" \
+      git codereview reword abc123
+
+For more complex edits (multi-line replacements, special characters),
+write a small script that reads and rewrites the message file:
+
+    GIT_EDITOR=/tmp/reword.sh git codereview reword abc123
+
+where /tmp/reword.sh edits "$1" (the path to the temporary message
+file) in place.
+
+IMPORTANT: git codereview reword preserves Change-Ids automatically.
+Do not use git codereview change -m to rewrite a message, as it
+replaces the message entirely and can generate a new Change-Id.
 
 ### Preserving Change-Ids
 
