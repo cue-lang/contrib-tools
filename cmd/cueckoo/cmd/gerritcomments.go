@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os/exec"
 	"slices"
 	"strings"
 )
@@ -32,7 +31,11 @@ const gerritBase = "https://cue.gerrithub.io"
 // fetchGerritComments fetches review comments from a GerritHub change
 // and returns them formatted, grouped by thread with resolved state.
 func fetchGerritComments(change string, unresolvedOnly bool) (string, error) {
-	changeNumber, err := resolveChangeNumber(change)
+	rc, err := resolveChange(change)
+	if err != nil {
+		return "", err
+	}
+	changeNumber, err := rc.Number()
 	if err != nil {
 		return "", err
 	}
@@ -179,55 +182,6 @@ func fetchPatchSetCommits(changeNumber string) map[int]string {
 		result[rev.Number] = commit
 	}
 	return result
-}
-
-func resolveChangeNumber(arg string) (string, error) {
-	prefix, value, ok := strings.Cut(arg, ":")
-	if !ok {
-		return "", fmt.Errorf("change argument must use a prefix (cl:, changeid:, or git:), got %q", arg)
-	}
-
-	switch prefix {
-	case "cl":
-		return value, nil
-
-	case "changeid":
-		return resolveChangeID(value)
-
-	case "git":
-		// Extract Change-Id from the commit message of the given git ref.
-		out, err := exec.Command("git", "log", "-1", "--format=%(trailers:key=Change-Id,valueonly=true)", value).Output()
-		if err != nil {
-			return "", fmt.Errorf("git log for ref %q: %w", value, err)
-		}
-		changeID := strings.TrimSpace(string(out))
-		if changeID == "" {
-			return "", fmt.Errorf("no Change-Id found in commit message for ref %q", value)
-		}
-		return resolveChangeID(changeID)
-
-	default:
-		return "", fmt.Errorf("unknown change prefix %q, expected one of cl, changeid, git", prefix)
-	}
-}
-
-func resolveChangeID(changeID string) (string, error) {
-	body, err := gerritAPIGet(fmt.Sprintf("/a/changes/?q=%s", changeID))
-	if err != nil {
-		return "", err
-	}
-
-	var changes []struct {
-		Number int `json:"_number"`
-	}
-	if err := json.Unmarshal(body, &changes); err != nil {
-		return "", fmt.Errorf("parsing Gerrit changes response: %w", err)
-	}
-	if len(changes) == 0 {
-		return "", fmt.Errorf("no change found for Change-Id %q", changeID)
-	}
-
-	return fmt.Sprintf("%d", changes[0].Number), nil
 }
 
 func gerritAPIGet(path string) ([]byte, error) {
