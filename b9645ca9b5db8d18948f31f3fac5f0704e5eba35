@@ -34,6 +34,40 @@
       "parentUuid": "06962d97_6bb7a2d3",
       "revId": "b9645ca9b5db8d18948f31f3fac5f0704e5eba35",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d90ad11d_226cd31e",
+        "filename": "cmd/cueckoo/cmd/gerritcomments.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 233,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2026-03-19T09:47:38Z",
+      "side": 1,
+      "message": "nit: call this GerritAPIRequestGet for consistency and clarity?",
+      "revId": "b9645ca9b5db8d18948f31f3fac5f0704e5eba35",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2acc2321_7be8bb8d",
+        "filename": "cmd/cueckoo/cmd/guidance.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2026-03-19T09:47:38Z",
+      "side": 1,
+      "message": "if this text is part of the previous bullet point, I\u0027d indent it with two spaces to be clear. If not, this would probably need to go after the list.",
+      "revId": "b9645ca9b5db8d18948f31f3fac5f0704e5eba35",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
