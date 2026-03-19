@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "06962d97_6bb7a2d3",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 9
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2026-03-19T09:03:18Z",
+      "side": 1,
+      "message": "This is just a dummy feedback message.",
+      "revId": "b9645ca9b5db8d18948f31f3fac5f0704e5eba35",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
