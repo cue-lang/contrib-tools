@@ -134,6 +134,26 @@ The change argument can be:
 	}, handleGerritChange)
 
 	mcp.AddTool(server, &mcp.Tool{
+		Name: "gerrit_lineage",
+		Description: `Show the local commit history for a GerritHub change.
+
+Resolves a change identifier to its Change-Id, then searches the local
+git reflog for all commits that carry that Change-Id in their trailers.
+This shows how a change evolved locally over time — each amend or rebase
+creates a new commit SHA but preserves the Change-Id.
+
+The change argument can be:
+
+  A Gerrit URL         — e.g. https://cue.gerrithub.io/c/cue-lang/cue/+/1233920
+  cl:<number>          — CL number, e.g. cl:1233920
+  changeid:<id>        — Change-Id, e.g. changeid:Ia15e97465869aa18ba2b8c9795cec18f438d7b76
+  git:<ref>            — any git ref, e.g. git:HEAD
+
+Note: only covers commits still in the reflog (typically 90 days for
+unreachable entries). Garbage-collected commits will not appear.`,
+	}, handleGerritLineage)
+
+	mcp.AddTool(server, &mcp.Tool{
 		Name: "gerrit_draft_comment",
 		Description: `Post a new draft review comment on a specific file and line of a GerritHub change.
 
@@ -311,6 +331,27 @@ type gerritChangeInput struct {
 
 func handleGerritChange(ctx context.Context, req *mcp.CallToolRequest, input gerritChangeInput) (*mcp.CallToolResult, any, error) {
 	result, err := fetchGerritChange(input.Change)
+	if err != nil {
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{
+				&mcp.TextContent{Text: fmt.Sprintf("error: %v", err)},
+			},
+			IsError: true,
+		}, nil, nil
+	}
+	return &mcp.CallToolResult{
+		Content: []mcp.Content{
+			&mcp.TextContent{Text: result},
+		},
+	}, nil, nil
+}
+
+type gerritLineageInput struct {
+	Change string `json:"change" jsonschema:"change identifier: a Gerrit URL, or prefixed as cl:<number>, changeid:<id>, or git:<ref>"`
+}
+
+func handleGerritLineage(ctx context.Context, req *mcp.CallToolRequest, input gerritLineageInput) (*mcp.CallToolResult, any, error) {
+	result, err := fetchGerritLineage(input.Change)
 	if err != nil {
 		return &mcp.CallToolResult{
 			Content: []mcp.Content{
