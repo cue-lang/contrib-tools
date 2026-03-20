@@ -112,17 +112,75 @@ commit becomes a separate CL linked by its Change-Id.
 - git codereview change (no arguments) amends the top commit
 - To edit a commit further down the chain, use
   git codereview rebase-work to interactively rebase
-- To edit only commit messages, always use git codereview reword.
-  Do not use git codereview change -m to rewrite a message, as it
-  replaces the message entirely and can generate a new Change-Id
+- To edit only commit messages, use git codereview reword — see
+  "Using git codereview reword" below for details
 - When mailing a branch with multiple commits, specify which:
   git codereview mail HEAD
 - git log @{u}..HEAD shows all pending commits
 
+### Inserting a new commit at the start of a chain
+
+To insert a new commit before all pending commits, create an empty
+commit at HEAD, then reorder it to the front during a rebase:
+
+    git commit --allow-empty -s -m "pkg/foo: summary"
+    GIT_SEQUENCE_EDITOR="sed -i -e '/<sha>/d' -e '1i edit <sha> pkg/foo: summary'" \
+      git codereview rebase-work
+
+The rebase stops at the empty commit (now first in the chain).
+Stage your changes and amend (git codereview change cannot be used
+during a rebase, so use git commit --amend directly):
+
+    git add <files>
+    git commit --amend --no-edit
+
+Then resume:
+
+    GIT_EDITOR=true git rebase --continue
+
+Do not try to insert a commit by marking the first existing commit
+for edit and creating a new commit while paused there — that inserts
+the new commit after the edit point, not before it.
+
 ### Editing a commit within a chain
 
-Use git codereview rebase-work, mark the target commit as "edit",
-then make your changes and amend with git codereview change.
+git codereview rebase-work runs git rebase -i under the hood. It
+opens an editor listing pending commits — each can be marked as
+"pick" (keep), "edit" (stop to amend), "reword", etc.
+
+IMPORTANT: always set GIT_SEQUENCE_EDITOR when running
+git codereview rebase-work. Without it, the command uses the
+default editor which may block waiting for input, or may return
+immediately as a no-op (leaving all commits as "pick" and doing
+nothing). Neither outcome is useful. Always set
+GIT_SEQUENCE_EDITOR to a command that edits the rebase todo list
+to produce the desired result.
+
+To mark a specific commit for editing by its SHA:
+
+    GIT_SEQUENCE_EDITOR="sed -i '/<sha>/s/pick/edit/'" \
+      git codereview rebase-work
+
+where <sha> is a short SHA (or unique prefix) from git log. The
+rebase pauses at that commit with it as HEAD. Make your edits,
+stage them, and amend. Use git commit --amend --no-edit for
+code-only changes, or cueckoo rewrite-commit-msg as GIT_EDITOR
+if the message also needs updating (see "Amending a commit message
+during a rebase edit" below). Then resume:
+
+    GIT_EDITOR=true git rebase --continue
+
+To mark multiple commits for editing:
+
+    GIT_SEQUENCE_EDITOR="sed -i -e '/<sha1>/s/pick/edit/' \
+      -e '/<sha2>/s/pick/edit/'" git codereview rebase-work
+
+IMPORTANT: when starting a rebase, always derive SHAs from the
+current branch state. Use git log @{u}..HEAD to get current SHAs
+— never use a SHA remembered from earlier in the conversation.
+Rebasing rewrites commit SHAs, so any SHA noted before a rebase
+is stale and must not be used. Using a stale SHA can silently
+duplicate, drop, or reorder commits.
 
 To extract changes from a commit (e.g. to move part of it into a
 new commit before or after), use git reset --soft HEAD^ to open the
@@ -140,33 +198,222 @@ individual hunks within a single file to a different commit:
     git reset -p HEAD somefile.go  # unstage just the hunks to move
     git commit -c ORIG_HEAD        # commit the rest (preserving the
                                    # original message and Change-Id)
-    git commit -a                  # commit the unstaged hunks as a
-                                   # new, separate change
+    git commit -a -s               # commit the unstaged hunks as a
+                                   # new, separate change (hooks add
+                                   # a fresh Change-Id)
 
 This is much better than git reset HEAD^ (without --soft), which
 unstages everything and forces you to rebuild the commit from
 scratch — error-prone and easy to get wrong with larger changes.
 
-When done editing, run git rebase --continue to replay the rest of
-the chain.
+### Extracting files into a different commit
+
+When a commit has accumulated files that belong in a different
+existing commit (e.g. review feedback was applied to the wrong
+commit), the reset --soft HEAD^ approach can cause modify/delete
+conflicts. A cleaner approach uses squash-then-split:
+
+1. Use GIT_SEQUENCE_EDITOR to squash the offending commit into
+   the commit that should receive the extra files, and insert an
+   empty commit before the squashed result:
+
+   First, create an empty commit at HEAD:
+
+       git commit --allow-empty -s -m "temp: extract files"
+
+   Then rebase to squash and reorder:
+
+       GIT_SEQUENCE_EDITOR="sed -i \
+         -e '/<offending>/s/pick/fixup/' \
+         -e '/<empty>/d' \
+         -e '/<target>/i edit <empty-sha> temp: extract files' \
+         -e '/<target>/s/pick/edit/'" \
+         git codereview rebase-work
+
+   This squashes the offending commit into the target, inserts
+   the empty commit before the target, and marks both for edit.
+
+2. The rebase pauses at the empty commit. Pull in just the files
+   that belong here from the next commit (the squashed target):
+
+       git checkout <next-sha> -- path/to/file.go
+       git commit --amend --no-edit
+
+3. Continue — the rebase pauses at the squashed target commit.
+   The extracted files are already applied (from step 2), so
+   the commit auto-resolves with just its own changes remaining.
+   Amend if the message needs updating:
+
+       git commit --amend --no-edit
+       GIT_EDITOR=true git rebase --continue
+
+This avoids modify/delete conflicts because the extraction happens
+cleanly before the target commit is replayed.
+
+### Preserving Change-Ids when splitting commits
+
+When splitting a commit into two during a rebase edit, one of the
+resulting commits must keep the original Change-Id (to preserve the
+link to the existing GerritHub CL). The other gets a new Change-Id.
+
+Which commit keeps the original Change-Id? The commit that retains
+the original purpose of the CL must keep its Change-Id. This
+preserves meaningful patchset history on GerritHub — reviewers can
+see how the CL evolved across patchsets. Do not assign the original
+Change-Id to extracted code that serves a different purpose — that
+repurposes the CL and makes the patchset history nonsensical.
+
+The commit that keeps the original Change-Id must use
+git commit -c ORIG_HEAD. The -c flag pre-populates the editor with
+the original commit message including the Change-Id trailer. The
+other commit uses git commit -s (or git commit -a -s) and the
+codereview hooks add a fresh Change-Id automatically.
+
+IMPORTANT: never use git commit -m "..." for the commit that must
+keep the original Change-Id. The -m flag replaces the message
+entirely, and the hooks generate a new Change-Id — orphaning the
+original CL. The -c flag is safe because it opens an editor
+pre-populated with the original message and Change-Id.
+
+There are two patterns depending on whether the extracted code goes
+before or after the original commit:
+
+Pattern 1: extract code into a new commit AFTER the original.
+The original work is committed first, keeping its Change-Id:
+
+    git reset --soft HEAD^             # open the commit
+    git reset -p HEAD somefile.go      # unstage hunks to extract
+    git commit -c ORIG_HEAD            # ORIGINAL work, keeps Change-Id
+    git commit -a -s                   # extracted code, fresh Change-Id
+
+Pattern 2: extract code into a new commit BEFORE the original.
+The extracted code is committed first with a fresh Change-Id,
+then the original work is committed with -c ORIG_HEAD:
+
+    git reset --soft HEAD^             # open the commit
+    git reset HEAD harness.go          # unstage file to extract
+    git commit -a -s                   # extracted code, fresh Change-Id
+    git commit -c ORIG_HEAD            # ORIGINAL work, keeps Change-Id
+
+Note the order in pattern 2: git commit -a -s creates the new
+preceding commit from the unstaged (extracted) files, then
+git commit -c ORIG_HEAD commits whatever was left staged — the
+original work with its Change-Id preserved.
+
+To drive the -c flag non-interactively, use
+cueckoo rewrite-commit-msg as GIT_EDITOR:
+
+    GIT_EDITOR="cueckoo rewrite-commit-msg -m 'cmd/foo: narrower summary
+
+    Updated description.'" git commit -c ORIG_HEAD
+
+When done editing, resume the rebase:
+
+    GIT_EDITOR=true git rebase --continue
+
+Always use GIT_EDITOR=true when resuming a rebase non-interactively.
+Without it, if the next commit in the sequence triggers a merge
+conflict, resolving the conflict and continuing would open an editor
+for the merge commit message, blocking the automation. Setting
+GIT_EDITOR=true makes it return immediately.
+
+### Amending a commit message during a rebase edit
+
+When paused at a commit marked for "edit" during a rebase, the
+commit message can be updated as part of the amend step. Always
+combine code changes and message updates into a single amend —
+do not amend code with --no-edit and then amend the message
+separately. Multiple amends are unnecessary and increase the risk
+of Change-Id loss.
+
+To keep the existing message unchanged (code-only edit):
+
+    git add <files>
+    git commit --amend --no-edit
+
+To amend both code and message together, use
+cueckoo rewrite-commit-msg as GIT_EDITOR:
+
+    git add <files>
+    GIT_EDITOR="cueckoo rewrite-commit-msg -m 'cmd/foo: updated summary
+
+    New description of the change.'" git commit --amend
+
+cueckoo rewrite-commit-msg replaces the message body with the -m
+argument while preserving all trailers (Change-Id, Signed-off-by,
+etc.). This is safe for any message rewrite — simple summary
+changes or complete rewrites.
+
+For minor edits (e.g. just the summary line), sed is also safe:
+
+    git add <files>
+    GIT_EDITOR="sed -i '1s/.*/cmd\/foo: updated summary/'" \
+      git commit --amend
+
+IMPORTANT: avoid git commit --amend -m "..." and
+git commit --amend -F <file> when the commit has a Change-Id.
+Both -m and -F replace the entire message, and the codereview
+hooks will generate a new Change-Id — orphaning the original CL.
+Use cueckoo rewrite-commit-msg instead.
+
+After amending, resume the rebase with GIT_EDITOR=true as above.
 
 ### Keeping commit messages accurate
 
 After any operation that changes the content of a commit — amending
 code, moving hunks between commits, squashing, or splitting — verify
 that every affected commit's message still accurately describes the
-resulting change. If it does not, update it. For the top commit, use
-git codereview change. For commits deeper in the stack, use
-git codereview reword.
+resulting change. If it does not, update it.
 
-This applies to every commit in the pending stack, not just the one
-you edited. Rebasing, splitting, or moving code between commits can
-make neighbouring messages stale too. After completing a rebase,
-review the full stack (git log @{u}..HEAD) and fix any messages that
-no longer match their diffs (git diff HEAD~1 for each commit).
+The preferred approach is to update each commit's message at the
+point you are editing it. When paused at a commit during a rebase,
+check whether the message still matches the diff and amend it as
+part of the same step (see "Amending a commit message during a
+rebase edit" above). This avoids a separate pass after the rebase.
+
+If a rebase has already completed, review the full stack
+(git log @{u}..HEAD) and fix any messages that no longer match
+their diffs (git diff HEAD~1 for each commit).
 
 Do not wait for the user to ask — this check must be automatic after
 every rebase or edit operation that changes commit content.
+
+How to update messages depends on context:
+
+- During a rebase edit stop (preferred): amend the message as part
+  of the amend step — this is the best time to do it since you are
+  already looking at the commit.
+- For the top commit (outside a rebase): use git codereview change.
+- For commits deeper in the stack (outside a rebase): use
+  git codereview reword.
+
+### Using git codereview reword
+
+git codereview reword rewrites commit messages without changing code.
+It performs a rebase internally, so it cannot be used while another
+rebase is in progress.
+
+With no arguments, it rewords all pending commits. With arguments, it
+rewords only the specified commits:
+
+    git codereview reword              # reword all pending commits
+    git codereview reword abc123       # reword a specific commit
+
+It invokes GIT_EDITOR for each commit message. To drive it
+non-interactively, use cueckoo rewrite-commit-msg as GIT_EDITOR:
+
+    GIT_EDITOR="cueckoo rewrite-commit-msg -m 'cmd/foo: new summary
+
+    New description.'" git codereview reword abc123
+
+For minor edits (e.g. just the summary line), sed also works:
+
+    GIT_EDITOR="sed -i '1s/.*/cmd\/foo: new summary line/'" \
+      git codereview reword abc123
+
+IMPORTANT: git codereview reword preserves Change-Ids automatically.
+Do not use git codereview change -m to rewrite a message, as it
+replaces the message entirely and can generate a new Change-Id.
 
 ### Preserving Change-Ids
 
@@ -221,20 +468,39 @@ match your working tree exactly. Use the comment context (file path,
 surrounding code, and the reviewer's description) to locate the
 relevant code rather than relying on exact line numbers.
 
+When investigating review feedback, examine the code at the commit
+being reviewed, not at HEAD. The reviewer's comments reference a
+specific patchset — line numbers, surrounding code, and even the
+existence of fields may differ from the current tip. Either rebase
+to edit the commit first (which positions HEAD at that commit), or
+use git show <sha>:<file> to read the file at the correct point
+in history before deciding what to change.
+
 Before making any changes, first determine which commit the feedback
 applies to. A branch may have multiple pending commits, each a
 separate CL. Use git log @{u}..HEAD to see
 the full stack.
 
 IMPORTANT: do not edit files or stage changes until you are
-positioned at the correct commit. If the target commit is not at
-the top of the stack, you must rebase first:
+positioned at the correct commit. This is a mechanical rule with
+no exceptions — it applies to ALL changes, including seemingly
+trivial ones like adding a comment, fixing a typo, or adding a
+TODO. There is no shortcut. Editing at HEAD and moving changes
+down via stash/pop is error-prone and wastes time. The rebase-edit
+workflow is always faster in practice because it avoids conflict
+resolution.
 
-1. git codereview rebase-work — mark the target commit as "edit"
+If the target commit is not at the top of the stack, you must
+rebase first:
+
+1. Use GIT_SEQUENCE_EDITOR to mark the target commit as "edit":
+   GIT_SEQUENCE_EDITOR="sed -i '/<sha>/s/pick/edit/'" \
+     git codereview rebase-work
 2. The rebase stops with that commit as HEAD
 3. Now read the code, make your edits, and stage them
-4. git codereview change — amend the commit
-5. git rebase --continue — replay the remaining commits
+4. Amend the commit: git commit --amend --no-edit (code only)
+   or use cueckoo rewrite-commit-msg if the message needs updating
+5. GIT_EDITOR=true git rebase --continue — replay the rest
 
 Do not make edits at the top of the stack and then try to move
 them down via stash/pop or cherry-pick — this will cause conflicts
@@ -358,6 +624,23 @@ instructions. For example:
 This structure ensures that common conventions are always up to date
 (served dynamically by the MCP tool) while allowing each repo to layer
 on its own instructions.
+
+## Creating issues
+
+When creating issues on any GitHub repository, always check for issue
+templates first and follow them:
+
+    gh api repos/<owner>/<repo>/contents/.github/ISSUE_TEMPLATE \
+      --jq '.[].name'
+
+If templates exist, read the relevant template to understand the
+required sections, then include all required fields and labels in
+the issue body. Use gh issue create with --label to set the labels
+specified in the template frontmatter.
+
+Never create an issue without checking for templates first. Failing
+to follow templates makes issues harder to triage and may cause them
+to be closed or ignored.
 
 ## Improving this guidance
 
