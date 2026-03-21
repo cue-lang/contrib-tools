@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "74bf6d67_98292a89",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 7
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2026-03-21T08:10:42Z",
+      "side": 1,
+      "message": "Please ensure this commit message is accurate.",
+      "revId": "37b445f45e1f6eda4898e23615b71a7529d44691",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
