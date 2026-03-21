@@ -18,6 +18,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "10e035f8_13d43d7c",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2026-03-21T08:19:09Z",
+      "side": 1,
+      "message": "Done. Updated the commit message to explain that git codereview change refuses to run during a rebase (checks for rebase-merge directory), and git codereview change -m replaces the entire message including trailers, risking Change-Id loss.",
+      "parentUuid": "4c7eb27c_12227e86",
+      "revId": "9c0315febaca8a79b9ab6c7d9f615765f3d42bd5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c9db3ba3_bf617fdc",
@@ -31,6 +49,24 @@
       "writtenOn": "2026-03-21T08:07:29Z",
       "side": 1,
       "message": "As I said before, we should use `git` commands to do this. I believe `git` supports a means of taking an arbitrary string and parsing out the parts. Is it `git interpret-trailers`?",
+      "revId": "9c0315febaca8a79b9ab6c7d9f615765f3d42bd5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "99b851d4_3c3f87e9",
+        "filename": "cmd/cueckoo/cmd/rewritecommitmsg.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2026-03-21T08:19:09Z",
+      "side": 1,
+      "message": "Done. Replaced custom trailer parsing (extractTrailers/isTrailerLine) with git interpret-trailers --parse.",
+      "parentUuid": "c9db3ba3_bf617fdc",
       "revId": "9c0315febaca8a79b9ab6c7d9f615765f3d42bd5",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
