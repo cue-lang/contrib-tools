@@ -24,6 +24,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "615ee086_48c4c117",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2026-03-21T08:18:53Z",
+      "side": 1,
+      "message": "Done. Changed \"GerritHub\" to \"Gerrit\" in both the commit message and the tool description.",
+      "parentUuid": "0fd5f460_517d9409",
+      "revId": "a5e89172e5a26c8446c1859b5ec60bb514d54d67",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "da122361_0552d896",
@@ -37,6 +55,24 @@
       "writtenOn": "2026-03-20T05:54:33Z",
       "side": 1,
       "message": "Perhaps this guidance should also be clear that Gerrit and local lineage can vary. i.e. not all local commits are mailed to gerrit, and similarly not all commits on gerrit were necessarily created by the same person (i.e. in some cases other people push patch sets).",
+      "revId": "a5e89172e5a26c8446c1859b5ec60bb514d54d67",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1d0277b3_7260ebf2",
+        "filename": "cmd/cueckoo/cmd/mcp.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2026-03-21T08:18:53Z",
+      "side": 1,
+      "message": "Done. Updated the note to explain that local and Gerrit lineage can differ: not all local commits are mailed to Gerrit, and other contributors may push patchsets that do not appear locally.",
+      "parentUuid": "da122361_0552d896",
       "revId": "a5e89172e5a26c8446c1859b5ec60bb514d54d67",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
