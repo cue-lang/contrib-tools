@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4c7eb27c_12227e86",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2026-03-21T08:07:29Z",
+      "side": 1,
+      "message": "This commit message needs to make clear why `git codereview` is not sufficient in this case.",
+      "revId": "9c0315febaca8a79b9ab6c7d9f615765f3d42bd5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c9db3ba3_bf617fdc",
+        "filename": "cmd/cueckoo/cmd/rewritecommitmsg.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2026-03-21T08:07:29Z",
+      "side": 1,
+      "message": "As I said before, we should use `git` commands to do this. I believe `git` supports a means of taking an arbitrary string and parsing out the parts. Is it `git interpret-trailers`?",
+      "revId": "9c0315febaca8a79b9ab6c7d9f615765f3d42bd5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
