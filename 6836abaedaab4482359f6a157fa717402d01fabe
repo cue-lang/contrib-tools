@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "df727ca9_ca88f580",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2026-03-27T07:14:54Z",
+      "side": 1,
+      "message": "Could we extend cueckoo with another subcommand that I could then alias from git? For example, I want to be able to call `git diffl HEAD~1` to diff the working tree with a previous commit in the lineage.",
+      "revId": "6836abaedaab4482359f6a157fa717402d01fabe",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
