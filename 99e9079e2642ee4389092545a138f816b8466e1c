@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1c4482ec_142066db",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 15
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2026-03-31T14:01:31Z",
+      "side": 1,
+      "message": "700 lines might be getting a bit long in terms of guidance that the AI can keep in its context effectively, but I guess we can tweak and trim as we go.",
+      "revId": "99e9079e2642ee4389092545a138f816b8466e1c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
