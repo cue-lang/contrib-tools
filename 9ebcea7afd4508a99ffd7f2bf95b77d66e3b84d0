@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fefe59bc_f017b476",
+        "filename": "cmd/cueckoo/cmd/gerritlineage.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2026-03-31T13:57:21Z",
+      "side": 1,
+      "message": "why the trimming of space? at first glance it seems unnecessary.",
+      "revId": "9ebcea7afd4508a99ffd7f2bf95b77d66e3b84d0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "28594d1a_f061db95",
+        "filename": "cmd/cueckoo/cmd/mcp.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2026-03-31T13:57:21Z",
+      "side": 1,
+      "message": "nit: what about calling this \"changeid_lineage\" or \"change_lineage\"? because it really has nothing to do with Gerrit, it\u0027s compatible with any VCS system that uses Change-Id footers.",
+      "revId": "9ebcea7afd4508a99ffd7f2bf95b77d66e3b84d0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
