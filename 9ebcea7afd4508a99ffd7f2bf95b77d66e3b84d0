@@ -51,6 +51,24 @@
       "parentUuid": "28594d1a_f061db95",
       "revId": "9ebcea7afd4508a99ffd7f2bf95b77d66e3b84d0",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "269a74ab_3e7ae976",
+        "filename": "cmd/cueckoo/cmd/mcp.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2026-04-01T07:34:28Z",
+      "side": 1,
+      "message": "Gerrit led the way for sure, but it\u0027s become a de facto standard for any modern git-like system: https://lobste.rs/s/aupah1/gerrit_gitbutler_jujutsu_projects\n\ntangled.org also supports them for the same reason.\n\nIt\u0027s not that calling this \"gerrit\" is wrong in our case, but a more generic name is more future proof (we will definitely have to move off of Gerrit at some point soon-ish), and it clarifies that this does not do network roundtrips to Gerrit (which other commands like gerrit_update_comment etc do)",
+      "parentUuid": "6001ef50_d306b515",
+      "revId": "9ebcea7afd4508a99ffd7f2bf95b77d66e3b84d0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
