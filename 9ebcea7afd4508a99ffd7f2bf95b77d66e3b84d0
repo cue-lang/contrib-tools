@@ -33,6 +33,24 @@
       "message": "nit: what about calling this \"changeid_lineage\" or \"change_lineage\"? because it really has nothing to do with Gerrit, it\u0027s compatible with any VCS system that uses Change-Id footers.",
       "revId": "9ebcea7afd4508a99ffd7f2bf95b77d66e3b84d0",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6001ef50_d306b515",
+        "filename": "cmd/cueckoo/cmd/mcp.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2026-04-01T05:27:01Z",
+      "side": 1,
+      "message": "I don\u0027t think it\u0027s correct to say that this has nothing to do with Gerrit. Gerrit requires a change-id trailer for all regular usage. Our use of Gerrit is central to what we are doing here. It\u0027s linked to the adding of review feedback etc. I\u0027m going to stick with gerrit_lineage for now. \n\nFurthermore, I\u0027m not aware of any other VCS systems that use Change-Id trailers. \n\nI\u0027ve submitted the two changes that were \"on top\" of this change, because this change needs a bit more work first in any case.",
+      "parentUuid": "28594d1a_f061db95",
+      "revId": "9ebcea7afd4508a99ffd7f2bf95b77d66e3b84d0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
