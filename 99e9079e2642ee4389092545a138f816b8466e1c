@@ -16,6 +16,24 @@
       "message": "700 lines might be getting a bit long in terms of guidance that the AI can keep in its context effectively, but I guess we can tweak and trim as we go.",
       "revId": "99e9079e2642ee4389092545a138f816b8466e1c",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "030855d7_ffa6d695",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 15
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2026-04-01T04:51:32Z",
+      "side": 1,
+      "message": "Agree that it\u0027s not short, but for as long as we don\u0027t have \"native\" support for this in claude and friends, it would be crazy for us to manually patch things up every time it makes a mistake (which would be the alternative to not trying to improve things via tooling and guidance).",
+      "parentUuid": "1c4482ec_142066db",
+      "revId": "99e9079e2642ee4389092545a138f816b8466e1c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
