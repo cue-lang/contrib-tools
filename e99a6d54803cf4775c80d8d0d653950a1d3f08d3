@@ -1,0 +1,22 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ac1fa002_3ff79e72",
+        "filename": "cmd/cueckoo/cmd/gerritlineage.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2026-04-01T05:32:20Z",
+      "side": 1,
+      "message": "Done. Removed the TrimSpace — it was redundant since the individual Change-Id values are already trimmed inside the loop.",
+      "parentUuid": "fefe59bc_f017b476",
+      "revId": "e99a6d54803cf4775c80d8d0d653950a1d3f08d3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
