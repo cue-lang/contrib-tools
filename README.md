@@ -1,6 +1,11 @@
 ## `contrib-tools`
 
-`contrib-tools` provides general code and tools for contributors to the [CUE](https://cuelang.org) project.
+`contrib-tools` provides general code and tools for contributors to the
+[CUE](https://cuelang.org) project.
+
+The upstream repository is hosted on
+[GerritHub](https://review.gerrithub.io/admin/repos/cue-lang/contrib-tools,general);
+the GitHub repository is a mirror.
 
 ### Issues
 
