@@ -279,7 +279,7 @@ type guidanceInput struct{}
 func handleGuidance(ctx context.Context, req *mcp.CallToolRequest, input guidanceInput) (*mcp.CallToolResult, any, error) {
 	return &mcp.CallToolResult{
 		Content: []mcp.Content{
-			&mcp.TextContent{Text: commonGuidance},
+			&mcp.TextContent{Text: formattedGuidance()},
 		},
 	}, nil, nil
 }
