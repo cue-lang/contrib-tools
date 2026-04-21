@@ -619,8 +619,10 @@ instructions. For example:
 
     Use the cueckoo MCP server's guidance tool to get the latest common
     guidance for CUE project repos. The server is registered as the
-    cueckoo MCP server (via cueckoo mcp). Follow all instructions
-    returned by the guidance tool.
+    cueckoo MCP server (via cueckoo mcp). The response includes a
+    guidance-hash — if a later system-reminder reports a different
+    hash, re-invoke the tool to pick up the changes. Follow all
+    instructions returned by the guidance tool.
 
     ## Project-specific instructions
 
@@ -629,6 +631,49 @@ instructions. For example:
 This structure ensures that common conventions are always up to date
 (served dynamically by the MCP tool) while allowing each repo to layer
 on its own instructions.
+
+## Configuring a repo to use this guidance
+
+A CUE project repo opts in to this guidance by committing two pieces of
+configuration alongside its CLAUDE.md:
+
+1. CLAUDE.md prelude — the "Common guidance" section shown under
+   "CLAUDE.md structure" above, which tells Claude to invoke the
+   guidance tool and to re-invoke it when the guidance-hash changes.
+
+2. .claude/settings.json hook — a SessionStart hook that runs
+   "cueckoo guidance --hash" and injects the current hash into
+   Claude's context on every new session and on "claude -c" resumes,
+   so staleness can be detected without the user having to prompt.
+   The hook entry (merge with any existing hooks rather than
+   overwriting) is:
+
+       "hooks": {
+         "SessionStart": [
+           {
+             "hooks": [
+               {
+                 "type": "command",
+                 "command": "printf 'Current cueckoo guidance-hash: %s\\n' \"$(cueckoo guidance --hash)\""
+               }
+             ]
+           }
+         ]
+       }
+
+   Commit .claude/settings.json (not .claude/settings.local.json) so
+   every contributor picks up the hook automatically —
+   .claude/settings.local.json is per-contributor state and is not a
+   shared repo asset.
+
+A SessionStart hook alone is sufficient: "cueckoo mcp" runs over stdio
+as a child of the Claude Code process, so the guidance served within a
+single session cannot change. The only events that can change it — a
+fresh start or "claude -c" resume — both fire SessionStart.
+
+When asked to configure a repo to follow the cueckoo MCP guidance,
+perform both steps (creating or updating CLAUDE.md and
+.claude/settings.json) and report which files changed.
 
 ## Creating issues
 
