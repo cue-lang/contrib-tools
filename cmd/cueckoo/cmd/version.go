@@ -20,8 +20,11 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	runtimedebug "runtime/debug"
+	"strings"
+	"syscall"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -32,7 +35,7 @@ const (
 	// checkInterval is how often we query the Go module proxy for a newer version.
 	checkInterval = 24 * time.Hour
 
-	moduleProxyURL = "https://proxy.golang.org/github.com/cue-lang/contrib-tools/@latest"
+	modulePath = "github.com/cue-lang/contrib-tools"
 )
 
 func newVersionCmd(c *Command) *cobra.Command {
@@ -48,58 +51,106 @@ func newVersionCmd(c *Command) *cobra.Command {
 			return nil
 		}),
 	}
+	cmd.AddCommand(newVersionUpdateCmd(c))
 	return cmd
 }
 
-// checkForUpdate prints a warning to stderr if a newer version of cueckoo
-// is available. It caches the latest known version in a file under UserCacheDir
-// and only queries the module proxy at most once per day.
-// Any errors are silently ignored to avoid disrupting normal usage.
-func checkForUpdate() {
-	bi, ok := runtimedebug.ReadBuildInfo()
-	if !ok {
-		return
+func newVersionUpdateCmd(c *Command) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "update",
+		Short: "check for and install the latest version of cueckoo",
+		RunE: mkRunE(c, func(cmd *Command, args []string) error {
+			curVersion, latest, hasUpdate := checkForUpdate(true)
+			if !hasUpdate {
+				if curVersion == "" {
+					return fmt.Errorf("no build info available")
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "cueckoo: already up to date (%s)\n", curVersion)
+				return nil
+			}
+			fmt.Fprintf(os.Stderr, "cueckoo: updating %s -> %s ...\n", curVersion, latest.Version)
+			if err := installUpdate(latest.Version); err != nil {
+				return fmt.Errorf("failed to install update: %w", err)
+			}
+			fmt.Fprintf(cmd.OutOrStdout(), "cueckoo: updated to %s\n", latest.Version)
+			return nil
+		}),
 	}
-	curVersion := bi.Main.Version
+	return cmd
+}
+
+// checkForUpdate checks if a newer version of cueckoo is available.
+// If forceCheck is true, the cache is bypassed and the module proxy is always queried.
+// It returns the current version, the latest proxy info, and whether an update is available.
+// Any errors are silently ignored (logged via debugf) to avoid disrupting normal usage.
+func checkForUpdate(forceCheck bool) (curVersion string, latest *proxyInfo, hasUpdate bool) {
+	// Allow overriding the current version for testing.
+	if v := os.Getenv("_CUECKOO_VERSION_OVERRIDE"); v != "" {
+		curVersion = v
+	} else {
+		bi, ok := runtimedebug.ReadBuildInfo()
+		if !ok {
+			return "", nil, false
+		}
+		curVersion = bi.Main.Version
+	}
 	if !semver.IsValid(curVersion) {
-		return // local build or unknown version
+		return curVersion, nil, false // local build or unknown version
 	}
 
 	cacheDir, err := os.UserCacheDir()
 	if err != nil {
-		return
+		return curVersion, nil, false
 	}
 	cacheFile := filepath.Join(cacheDir, "cueckoo", "latest.info")
 
-	info, err := cachedProxyInfo(cacheFile)
+	info, err := cachedProxyInfo(cacheFile, forceCheck)
 	if err != nil {
 		debugf("update check error: %v\n", err)
-		return
+		return curVersion, nil, false
 	}
 	cmp := semver.Compare(info.Version, curVersion)
 	debugf("update check: current=%s latest=%s compare=%d\n", curVersion, info.Version, cmp)
-	if cmp > 0 {
-		fmt.Fprintf(os.Stderr, `
-cueckoo: a newer version is available: %s (current: %s)
+	return curVersion, info, cmp > 0
+}
 
-	go install github.com/cue-lang/contrib-tools/cmd/cueckoo@latest
-`[1:], info.Version, curVersion)
+// installUpdate installs the specified version of cueckoo via go install.
+func installUpdate(version string) error {
+	cmd := exec.Command("go", "install", "github.com/cue-lang/contrib-tools/cmd/cueckoo@"+version)
+	cmd.Stdout = os.Stderr
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
+
+// reExec replaces the current process with a fresh invocation of the cueckoo binary.
+// It sets _CUECKOO_SELF_UPDATED=1 so the new process skips the update check.
+func reExec() error {
+	exe, err := os.Executable()
+	if err != nil {
+		return err
 	}
+	exe, err = filepath.EvalSymlinks(exe)
+	if err != nil {
+		return err
+	}
+	os.Setenv("_CUECKOO_SELF_UPDATED", "1")
+	return syscall.Exec(exe, os.Args, os.Environ())
 }
 
 // cachedProxyInfo returns the proxy info, fetching from the proxy
-// if the cache is stale or missing.
-func cachedProxyInfo(cacheFile string) (*proxyInfo, error) {
+// if the cache is stale or missing. If forceCheck is true, the cache is ignored.
+func cachedProxyInfo(cacheFile string, forceCheck bool) (*proxyInfo, error) {
 	// Check if the cache is fresh enough.
-	if stat, err := os.Stat(cacheFile); err == nil {
-		if time.Since(stat.ModTime()) < checkInterval {
-			debugf("update check: using cached version from %s\n", cacheFile)
-			return readProxyInfo(cacheFile)
+	if !forceCheck {
+		if stat, err := os.Stat(cacheFile); err == nil {
+			if time.Since(stat.ModTime()) < checkInterval {
+				debugf("update check: using cached version from %s\n", cacheFile)
+				return readProxyInfo(cacheFile)
+			}
 		}
 	}
 
 	// Fetch the latest info from the module proxy.
-	debugf("update check: fetching latest version from %s\n", moduleProxyURL)
 	data, err := fetchProxyInfo()
 	if err != nil {
 		return nil, err
@@ -140,8 +191,25 @@ func readProxyInfo(path string) (*proxyInfo, error) {
 	return &info, nil
 }
 
+// proxyBaseURL returns the module proxy base URL,
+// using GOPROXY if set, falling back to proxy.golang.org.
+func proxyBaseURL() string {
+	base := os.Getenv("GOPROXY")
+	if base == "" {
+		return "https://proxy.golang.org"
+	}
+	// GOPROXY can be comma or pipe separated; use only the first entry.
+	if i := strings.IndexAny(base, ",|"); i >= 0 {
+		base = base[:i]
+	}
+	return strings.TrimRight(base, "/")
+}
+
+// fetchProxyInfo fetches the latest version info from the module proxy's @latest endpoint.
 func fetchProxyInfo() ([]byte, error) {
-	resp, err := http.Get(moduleProxyURL)
+	url := proxyBaseURL() + "/" + modulePath + "/@latest"
+	debugf("update check: fetching latest info from %s\n", url)
+	resp, err := http.Get(url)
 	if err != nil {
 		return nil, err
 	}
