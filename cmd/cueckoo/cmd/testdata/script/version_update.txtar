@@ -1,0 +1,8 @@
+# Test that `cueckoo version update` detects and installs a newer version.
+# The pre-command hook is skipped for version subcommands, so `version update`
+# itself performs the install.
+
+env _CUECKOO_VERSION_OVERRIDE=v0.0.1
+exec cueckoo version update
+stderr 'cueckoo: updating v0.0.1 -> v0.99.0'
+stdout 'cueckoo: updated to v0.99.0'
