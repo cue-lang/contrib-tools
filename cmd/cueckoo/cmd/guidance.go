@@ -14,6 +14,11 @@
 
 package cmd
 
+import (
+	"crypto/sha256"
+	"encoding/hex"
+)
+
 // commonGuidance is the canonical set of instructions shared across all
 // CUE project repos. It is returned by the "guidance" MCP tool and can
 // be used to keep per-repo CLAUDE.md files in sync.
@@ -655,3 +660,26 @@ the current guidance and the suggested improvement. This is a public
 issue tracker — do not include private details, credentials, or
 other sensitive information in the report.
 `
+
+// commonGuidanceHash is the hex-encoded sha256 of commonGuidance. It
+// is included in responses from the guidance MCP tool and the
+// "cueckoo guidance" CLI so callers can detect when the underlying
+// guidance has changed without re-reading the full body.
+var commonGuidanceHash = func() string {
+	sum := sha256.Sum256([]byte(commonGuidance))
+	return hex.EncodeToString(sum[:])
+}()
+
+// formattedGuidance returns commonGuidance prefixed with a
+// machine-readable guidance-hash header and an instruction for
+// consumers to re-read the guidance when they see a different hash
+// in a later system-reminder. Both the MCP tool handler and the
+// "cueckoo guidance" CLI return this exact text.
+func formattedGuidance() string {
+	return "guidance-hash: " + commonGuidanceHash + "\n\n" +
+		"If a later system-reminder reports a different guidance-hash, " +
+		"re-read this guidance (via the cueckoo guidance MCP tool or " +
+		"the \"cueckoo guidance\" CLI) to pick up the changes.\n\n" +
+		"---\n\n" +
+		commonGuidance
+}

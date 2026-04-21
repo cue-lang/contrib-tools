@@ -83,6 +83,7 @@ func newRootCmd() *Command {
 		newVersionCmd(c),
 		newMCPCmd(c),
 		newRewriteCommitMsgCmd(c),
+		newGuidanceCmd(c),
 	}
 
 	for _, sub := range subCommands {
