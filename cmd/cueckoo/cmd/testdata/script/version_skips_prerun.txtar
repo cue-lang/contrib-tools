@@ -1,0 +1,8 @@
+# Test that `cueckoo version` skips the pre-command auto-update check.
+
+env _CUECKOO_VERSION_OVERRIDE=v0.0.1
+env CUECKOO_DEBUG=1
+exec cueckoo version
+! stderr 'fetching latest info'
+! stderr 'update check'
+! stderr 'updating'

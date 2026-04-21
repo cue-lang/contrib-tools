@@ -1,0 +1,19 @@
+-- .info --
+{"Version":"v0.99.0","Time":"2036-01-01T00:00:00Z"}
+-- .mod --
+module github.com/cue-lang/contrib-tools
+
+go 1.25.0
+-- cmd/cueckoo/main.go --
+package main
+
+import (
+	"fmt"
+	"os"
+	"strings"
+)
+
+func main() {
+	fmt.Printf("cueckoo v0.99.0 [%s]\n", strings.Join(os.Args[1:], " "))
+	os.Exit(0)
+}

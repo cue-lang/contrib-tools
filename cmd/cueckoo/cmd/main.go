@@ -68,8 +68,35 @@ func newRootCmd() *Command {
 		Use:          "cueckoo",
 		Short:        "cueckoo is a development tool for working with the CUE project",
 		SilenceUsage: true,
-		PersistentPostRun: func(_ *cobra.Command, _ []string) {
-			checkForUpdate()
+		PersistentPreRun: func(_ *cobra.Command, _ []string) {
+			if os.Getenv("_CUECKOO_SELF_UPDATED") != "" {
+				return
+			}
+			curVersion, latest, hasUpdate := checkForUpdate(false)
+			if !hasUpdate {
+				return
+			}
+			exe, target, err := installTarget()
+			if err != nil {
+				debugf("install location check error: %v\n", err)
+				return
+			}
+			if exe != target {
+				// `go install` would not overwrite the running binary, so an
+				// in-place auto-update isn't safe. Nudge the user instead.
+				fmt.Fprintf(os.Stderr, "cueckoo: a newer version %s is available (current: %s)\n"+
+					"cueckoo: the running binary %s is not in GOBIN/GOPATH/bin; run `cueckoo version update` or reinstall manually\n",
+					latest.Version, curVersion, exe)
+				return
+			}
+			fmt.Fprintf(os.Stderr, "cueckoo: updating %s -> %s ...\n", curVersion, latest.Version)
+			if err := installUpdate(latest.Version); err != nil {
+				debugf("update install error: %v\n", err)
+				return
+			}
+			if err := reExec(exe); err != nil {
+				debugf("re-exec error: %v\n", err)
+			}
 		},
 	}
 

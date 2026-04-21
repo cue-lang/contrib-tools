@@ -1,0 +1,9 @@
+# Test that _CUECKOO_SELF_UPDATED prevents the update check after re-exec.
+
+env _CUECKOO_VERSION_OVERRIDE=v0.0.1
+env _CUECKOO_SELF_UPDATED=1
+exec cueckoo rewrite-commit-msg -m msg commit.txt
+! stderr 'updating'
+
+-- commit.txt --
+original
