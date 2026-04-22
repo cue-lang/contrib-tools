@@ -28,6 +28,26 @@ This guidance applies to all repositories in the CUE project. It is
 served by the cueckoo MCP server and should be incorporated into each
 repo's CLAUDE.md.
 
+## Repo workflows: GerritHub vs GitHub-PR-only
+
+CUE project repos use one of two code review and CI workflows. Most
+of this guidance is common to both, but several sections apply only
+to one. Before applying any workflow-specific section, determine
+which workflow your repo uses:
+
+- GerritHub workflow: the repo has a codereview.cfg file in its
+  root identifying the GerritHub instance and GitHub mirror.
+  GerritHub is the source of truth; GitHub is a mirror; CI runs
+  via cueckoo runtrybot. Review happens on GerritHub CLs.
+- GitHub-PR-only workflow: the repo has no codereview.cfg. Review
+  happens entirely on GitHub PRs and CI runs via GitHub Actions.
+  There are no Change-Ids, no git-codereview tooling, and no
+  gerrit_* MCP tools.
+
+Sections below that apply to only one workflow are marked "Applies
+to: GerritHub repos" or "Applies to: GitHub-PR-only repos". Skip
+sections that do not apply to the repo you are in.
+
 ## Commit Messages
 
 Commit messages follow specific conventions. The first line is a short
@@ -52,27 +72,35 @@ Additional conventions:
 - Reference issues with "Fixes #NNN" (closes the issue on submit) or
   "Updates #NNN" (links without closing). For subrepositories, use
   the fully-qualified form: "Fixes cue-lang/cue#NNN"
-- All commits must include a Change-Id trailer. The Change-Id is
-  what GerritHub uses to uniquely identify a change — see
-  "Preserving Change-Ids" below. IMPORTANT: never write or invent a
-  Change-Id yourself. Change-Ids are generated automatically by
-  git codereview hooks (installed via git codereview hooks). Use
-  git codereview change to create or amend commits and the hook
-  will add or preserve the Change-Id
+- (GerritHub repos only) All commits must include a Change-Id
+  trailer. The Change-Id is what GerritHub uses to uniquely identify
+  a change — see "Preserving Change-Ids" below. IMPORTANT: never
+  write or invent a Change-Id yourself. Change-Ids are generated
+  automatically by git codereview hooks (installed via
+  git codereview hooks). Use git codereview change to create or
+  amend commits and the hook will add or preserve the Change-Id.
+  GitHub-PR-only repos do not use Change-Ids
 
 ## Code Review
 
-All CUE project repos use GerritHub for code review. Both GerritHub
-CLs and GitHub PRs are supported workflows.
+Code review happens on GerritHub (for repos with a codereview.cfg)
+or on GitHub PRs (for repos without one). See "Repo workflows"
+above.
 
-Repos that use GerritHub have a codereview.cfg file in the repository
-root. This file identifies the GerritHub instance (which must match
-the origin remote) and the GitHub mirror:
+For GerritHub repos, the codereview.cfg file identifies the
+GerritHub instance (which must match the origin remote) and the
+GitHub mirror:
 
     gerrit: https://cue.gerrithub.io/a/cue-lang/<repo>
     github: https://github.com/cue-lang/<repo>
 
 GerritHub is the source of truth; GitHub is a mirror.
+
+The following subsections — up to and including "Addressing review
+feedback" — describe the GerritHub workflow. They apply only to
+repos with a codereview.cfg. Skip them for GitHub-PR-only repos
+and use the "GitHub PR workflow" subsection at the end of this
+section instead.
 
 ### git-codereview
 
@@ -514,13 +542,51 @@ when intermediate commits touch the same code.
 If the target commit is already at the top of the stack, simply
 edit the working tree and run git codereview change.
 
-## CI (trybots)
+### GitHub PR workflow
+
+Applies to: GitHub-PR-only repos (no codereview.cfg).
+
+All review happens on GitHub PRs. There are no Change-Ids, no
+git-codereview tooling, and no gerrit_* MCP tools. Use the gh CLI
+for PR interactions.
+
+Basic workflow:
+
+- Create a work branch: git checkout -b my-branch
+- Stage changes and commit with sign-off: git commit -a -s
+- Push to the remote: git push -u origin my-branch
+- Open a PR: gh pr create
+
+A branch with multiple commits becomes a single PR covering all of
+them, not one PR per commit. To update a PR, push new commits or
+amend and force-push with --force-with-lease.
+
+Addressing review feedback:
+
+- Fetch comments with: gh pr view <N> --comments or
+  gh api repos/<owner>/<repo>/pulls/<N>/comments
+- Focus on unresolved threads — these need action
+- Each comment is like a ticket: either implement the suggestion or
+  explain why not
+- Make the code change, push a new commit (or amend and force-push),
+  and reply to each thread explaining what was done — via the
+  GitHub UI or gh pr review
+
+When investigating PR review feedback, examine the code at the
+commit being reviewed: review comments reference line numbers in a
+specific SHA, which may differ from the current tip. Use
+git show <sha>:<file> or check the PR out locally with
+gh pr checkout <N>.
+
+## CI
 
 IMPORTANT: in the CUE project, "tests" always refers to running the
 project's test suite locally (e.g. "go test ./..."). Remote CI is
 always referred to as "trybots". If someone says "the tests are
 failing", they mean locally — if they meant CI, they would say
 "the trybots are failing".
+
+### GerritHub repos (with codereview.cfg)
 
 CUE projects run CI via cueckoo runtrybot, not through Gerrit labels.
 
@@ -538,6 +604,18 @@ Flags:
 Requires a GitHub username and classic personal access token with the
 "repo" scope, configured via a git credential helper or the GITHUB_USER
 and GITHUB_PAT environment variables.
+
+### GitHub-PR-only repos (no codereview.cfg)
+
+CI runs via GitHub Actions workflows defined in .github/workflows.
+There is no separate trigger step — opening or updating a PR runs
+the workflows. Inspect results with:
+
+    gh pr checks <N>            # summary of checks for PR N
+    gh run view <run-id>        # details of a specific run
+    gh run view --log <run-id>  # stream the logs
+
+cueckoo runtrybot does not apply to these repos.
 
 ## Community
 
