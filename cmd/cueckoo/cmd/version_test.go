@@ -15,6 +15,7 @@
 package cmd
 
 import (
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -46,13 +47,44 @@ func TestScript(t *testing.T) {
 			env.Setenv("GOMODCACHE", filepath.Join(env.WorkDir, "gomodcache"))
 			env.Setenv("GOCACHE", filepath.Join(env.WorkDir, "gocache"))
 
-			// Set GOBIN to the directory containing the cueckoo binary
-			// so that `go install` overwrites it and reExec picks up the new binary.
+			// Per-test bindir so `go install` only overwrites a disposable
+			// copy of cueckoo, not the shared testscript dispatch binary
+			// (which would break later tests and -count=N iterations).
+			perTestBin := filepath.Join(env.WorkDir, "bin")
+			if err := os.MkdirAll(perTestBin, 0o777); err != nil {
+				return err
+			}
 			path := env.Getenv("PATH")
-			gobin, _, _ := strings.Cut(path, string(filepath.ListSeparator))
-			env.Setenv("GOBIN", gobin)
+			sharedBindir, _, _ := strings.Cut(path, string(filepath.ListSeparator))
+			if err := copyFile(filepath.Join(sharedBindir, "cueckoo"), filepath.Join(perTestBin, "cueckoo")); err != nil {
+				return err
+			}
+			env.Setenv("PATH", perTestBin+string(filepath.ListSeparator)+path)
+			env.Setenv("GOBIN", perTestBin)
 
 			return nil
 		},
 	})
+}
+
+func copyFile(src, dst string) error {
+	// Prefer a hardlink so there is no window between writing and exec
+	// during which the kernel may return ETXTBSY.
+	if err := os.Link(src, dst); err == nil {
+		return nil
+	}
+	r, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer r.Close()
+	w, err := os.OpenFile(dst, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o777)
+	if err != nil {
+		return err
+	}
+	if _, err := io.Copy(w, r); err != nil {
+		w.Close()
+		return err
+	}
+	return w.Close()
 }
