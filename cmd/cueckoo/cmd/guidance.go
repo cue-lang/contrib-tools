@@ -71,16 +71,19 @@ Additional conventions:
 - No AI authorship attribution in commit messages
 - Reference issues with "Fixes #NNN" (closes the issue on submit) or
   "Updates #NNN" (links without closing). For subrepositories, use
-  the fully-qualified form: "Fixes cue-lang/cue#NNN"
+  the fully-qualified form: "Fixes cue-lang/cue#NNN". These lines
+  must appear after the prose body, not within or before it —
+  typically as the last lines of the message, just before any
+  trailers such as Signed-off-by and (on GerritHub repos) Change-Id
 - When referring to CUE or Go GitHub issues or GerritHub CLs from
   within the body of a commit message (the prose between the summary
-  line and the trailers) or from within source code, use the
-  canonical short URLs: https://cuelang.org/issue/NNN and
-  https://cuelang.org/cl/NNN for CUE, and https://go.dev/issue/NNN
+  line and the "Fixes"/"Updates"/"For" lines) or from within source
+  code, use the canonical short URLs: https://cuelang.org/issue/NNN
+  and https://cuelang.org/cl/NNN for CUE, and https://go.dev/issue/NNN
   and https://go.dev/cl/NNN for Go. This does not apply to the
   commit summary line, nor to the "Fixes", "Updates", or "For"
-  trailing lines, which use the "#NNN" or "cue-lang/<repo>#NNN"
-  forms described above
+  lines, which use the "#NNN" or "cue-lang/<repo>#NNN" forms
+  described above
 - (GerritHub repos only) All commits must include a Change-Id
   trailer. The Change-Id is what GerritHub uses to uniquely identify
   a change — see "Preserving Change-Ids" below. IMPORTANT: never
