@@ -590,6 +590,72 @@ specific SHA, which may differ from the current tip. Use
 git show <sha>:<file> or check the PR out locally with
 gh pr checkout <N>.
 
+## Git safety
+
+Some git state is shared with the user across sessions. Operating on
+it without care can silently destroy unrelated work. Two rules apply
+regardless of workflow.
+
+### Never touch the user's stash stack
+
+The default git stash stack at refs/stash belongs to the user. It
+may contain unrelated work in progress, possibly weeks old, and
+silently dropping an entry is unrecoverable once git garbage-collects
+the underlying commit object.
+
+Forbidden commands (they all read or write refs/stash):
+
+    git stash               # push onto refs/stash
+    git stash push          # same
+    git stash pop           # apply and drop top of refs/stash
+    git stash drop          # drop from refs/stash
+    git stash clear         # wipe refs/stash entirely
+    git stash apply         # without an explicit sha argument
+
+In particular, do not trust the message "The stash entry is kept in
+case you need it again" as proof that a new entry was created — git
+prints this even when stash creation fails (e.g. due to a conflicted
+index), in which case a subsequent "drop" destroys a pre-existing
+user entry, not the one you thought you just created.
+
+For your own temporary stashing, use a private ref namespace under
+refs/claude/stash/ so entries cannot collide with the user's:
+
+    # Push: create a stash commit and park it under a private ref.
+    sha=$(git stash create) && [ -n "$sha" ] && \
+      git update-ref refs/claude/stash/$(date +%s) "$sha"
+
+    # List your private stashes:
+    git for-each-ref refs/claude/stash
+
+    # Show contents of a specific stash commit:
+    git stash show -p <sha>
+    git show <sha>
+
+    # Apply a private stash (safe — explicit sha does not touch refs/stash):
+    git stash apply <sha>
+
+    # Drop a private stash:
+    git update-ref -d refs/claude/stash/<id>
+
+git stash create returns empty when there are no changes; check
+before creating a ref. Default to not stashing at all — to peek at
+another ref, prefer git show <ref>:<path>, git diff, a worktree, or
+just reading the file directly.
+
+### Other destructive operations require explicit user approval
+
+Beyond stashes, treat the following as destructive and confirm with
+the user before running, even if they look locally scoped:
+
+- git reset --hard, git checkout ., git restore ., git clean -f
+- git branch -D, git push --force (especially to shared branches)
+- Any operation that discards uncommitted changes or rewrites
+  published history
+
+When in doubt, prefer a non-destructive alternative (e.g. resolving
+a merge conflict rather than aborting and resetting).
+
 ## CI
 
 IMPORTANT: in the CUE project, "tests" always refers to running the
