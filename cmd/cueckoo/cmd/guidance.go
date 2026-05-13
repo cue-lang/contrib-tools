@@ -782,6 +782,90 @@ Never create an issue without checking for templates first. Failing
 to follow templates makes issues harder to triage and may cause them
 to be closed or ignored.
 
+## Diagnosing guidance-rule slips
+
+When a user reports that you, or another AI, did not follow a rule
+that is in this guidance — for example, a commit message body that
+refers to a CL by title rather than by https://cuelang.org/cl/NNN —
+do not infer the cause from the symptom. The same symptom can be
+produced by several distinct failure modes, and each calls for a
+different fix. Inferring "the guidance was not loaded" from a
+symptom and then proposing a loading fix is unhelpful if the actual
+cause was something else; cross-repo configuration changes made on
+a guessed diagnosis can solve the wrong problem.
+
+The protocol has three steps.
+
+### Step 1: Reload the guidance
+
+Before doing any analysis, re-invoke the guidance tool to ensure
+the current rule wording is in context. The model performing the
+diagnosis must be able to quote the rule verbatim from a freshly
+fetched body — not rely on a faded recollection of it.
+
+### Step 2: Classify the failure, with evidence
+
+Walk the following modes. For each, state explicitly what evidence
+supports or rules it out. If no mode can be established from
+evidence, report the diagnosis as "inconclusive" rather than
+picking one — speculation is worse than a precise "I do not know."
+
+1. Loading failure. The model never invoked the guidance tool in
+   the session that produced the slip. Confirm by inspecting the
+   session transcript for an mcp__cueckoo__guidance tool call.
+   Present rules out this mode; absent confirms it.
+
+2. Adherence failure. The model did invoke the tool and the rule
+   was in context, but the model did not apply it. Confirm by
+   asking the in-session model to quote the rule. If it can quote
+   the rule but the slip still occurred, the failure is adherence.
+
+3. Compression failure. The model invoked the tool early in the
+   session but the result was dropped from context by automatic
+   conversation compression before the violating output was
+   produced. Confirm by checking whether the tool call is present
+   in the transcript but the rule is no longer recoverable from
+   the model's current context (the in-session model can
+   introspect on this directly).
+
+4. Trigger mismatch. The model had the rule in context but its
+   wording did not match the situation the model was in — for
+   example, a rule about "referring to a CL in a commit body" not
+   firing because the model framed its task as "describing a
+   sibling commit." Confirm by asking the model whether it
+   considered the rule, and if so why it judged the rule not to
+   apply.
+
+5. Instruction conflict. The model had the rule in context but
+   another instruction (a CLAUDE.md addendum, a user prompt, a
+   prior decision in the session) pulled the other way, and the
+   model resolved the conflict against the rule. Confirm by
+   identifying the competing instruction and the resolution.
+
+The cheapest and most precise diagnostic is to ask the in-session
+model directly, while the session is still live: "Did you load the
+cueckoo guidance? Quote the rule about <X>, or tell me you do not
+have it. If you have it, why did your output diverge from it?"
+That answer disambiguates modes 1-4 in one step. If the session
+is no longer available, the diagnosis is necessarily after-the-fact
+and should be reported as inferred, not observed.
+
+### Step 3: Report the diagnosis
+
+When raising an issue or describing the slip in a code review,
+include:
+
+- The classified failure mode, or "inconclusive" with reasons.
+- The verbatim rule, quoted from the guidance.
+- The verbatim violating output.
+- The evidence supporting the classification — the transcript
+  excerpt, the model's introspective reply, or both.
+
+If the diagnosis is inferred from the symptom rather than observed
+from evidence, say so explicitly in the report. Inferred diagnoses
+are a useful starting point but cannot, on their own, justify a
+cross-repo rollout of a fix.
+
 ## Improving this guidance
 
 If in the course of following this guidance you find it to be
