@@ -57,17 +57,19 @@ summary prefixed by the primary affected package or area, e.g.:
     cmd/cue: add --out flag to export for controlling output format
     internal/core/adt: reduce allocations during unification of large structs
 
-The first line should complete the sentence "This change modifies CUE
-to ___." — it does not start with a capital letter, is not a complete
-sentence, and summarises the result of the change.
+The first line should complete the sentence "This change modifies
+<the repo> to ___." — it does not start with a capital letter, is
+not a complete sentence, and summarises the result of the change.
+The test sentence is illustrative; subrepos substitute their own
+name (e.g. "modifies contrib-tools to ___").
 
 Follow the first line with a blank line, then a description that
 provides context and explains what the change does. Write in complete
 sentences with correct punctuation. Do not use markdown or other markup.
 
 Additional conventions:
-- Include a Signed-off-by line (use git commit -s or git codereview
-  change -s) to assert the Developer Certificate of Origin
+- Include a Signed-off-by line (use git commit -s) to assert the
+  Developer Certificate of Origin
 - No AI authorship attribution in commit messages
 - Reference issues with "Fixes #NNN" (closes the issue on submit) or
   "Updates #NNN" (links without closing). For subrepositories, use
@@ -88,10 +90,12 @@ Additional conventions:
   trailer. The Change-Id is what GerritHub uses to uniquely identify
   a change — see "Preserving Change-Ids" below. IMPORTANT: never
   write or invent a Change-Id yourself. Change-Ids are generated
-  automatically by git codereview hooks (installed via
-  git codereview hooks). Use git codereview change to create or
-  amend commits and the hook will add or preserve the Change-Id.
-  GitHub-PR-only repos do not use Change-Ids
+  automatically by the git codereview commit-msg hook (installed
+  via git codereview hooks). The hook fires on any commit operation
+  — plain git commit, git commit --amend, git rebase, and the
+  git codereview wrappers all trigger it — so plain git commands
+  preserve and add Change-Ids correctly. GitHub-PR-only repos do
+  not use Change-Ids
 
 ## Code Review
 
@@ -132,20 +136,33 @@ differ. For example:
 
 Key commands (use "git codereview <command> -h" for full usage):
 
-    git codereview change    create/switch branch, or amend pending commit
-    git codereview mail      push pending change to Gerrit for review
-    git codereview sync      fetch and rebase on upstream
+    git codereview change NNNN  fetch and check out an existing Gerrit CL
+    git codereview mail         push pending change to Gerrit for review
+    git codereview sync         fetch and rebase on upstream
     git codereview rebase-work  interactive rebase over pending changes
-    git codereview reword    edit pending commit messages (safe while tests run)
-    git codereview hooks     install Change-Id and gofmt hooks
+    git codereview reword       edit pending commit messages (safe while tests run)
+    git codereview hooks        install Change-Id and gofmt hooks
 
 ### GerritHub workflow
 
-- Create a work branch: git codereview change my-branch
-- Stage changes and create a commit: git codereview change -a -s
+- Create a work branch off the upstream's default branch
+  (origin/master for CUE repos):
+
+      git checkout -b my-branch origin/master
+
+  This sets origin/master as the new branch's upstream and starts
+  the branch at the origin tip. Vary the starting point only when
+  context explicitly directs otherwise (e.g. when building on
+  someone else's branch)
+- Stage changes and create the first commit: git commit -a -s. The
+  codereview commit-msg hook adds the Change-Id automatically and
+  the prepare-commit-msg hook adds Signed-off-by (-s also adds it).
+  For adding further commits, see "Working with chains of commits"
+  below
 - Send for review: git codereview mail
 - The Change-Id trailer links commits to GerritHub changes — it is
-  added automatically by git codereview hooks
+  added automatically by the codereview commit-msg hook on any
+  commit, not just commits made via the codereview wrappers
 - Download an existing CL to work on: git codereview change NNNN
 
 ### Working with chains of commits
@@ -153,8 +170,13 @@ Key commands (use "git codereview <command> -h" for full usage):
 Gerrit encourages chains of related commits on a single branch. Each
 commit becomes a separate CL linked by its Change-Id.
 
-- Add commits with git commit directly (not git codereview change)
-- git codereview change (no arguments) amends the top commit
+- Add further commits on top of the first with plain git commit (not
+  git codereview change, which would amend the top commit rather
+  than create a new one)
+- To amend the top commit, use git commit --amend — for code-only
+  edits with --no-edit, or with cueckoo rewrite-commit-msg as
+  GIT_EDITOR if the message also needs updating. The codereview
+  hooks preserve the Change-Id either way
 - To edit a commit further down the chain, use
   git codereview rebase-work to interactively rebase
 - To edit only commit messages, use git codereview reword — see
@@ -173,8 +195,7 @@ commit at HEAD, then reorder it to the front during a rebase:
       git codereview rebase-work
 
 The rebase stops at the empty commit (now first in the chain).
-Stage your changes and amend (git codereview change cannot be used
-during a rebase, so use git commit --amend directly):
+Stage your changes and amend:
 
     git add <files>
     git commit --amend --no-edit
@@ -418,7 +439,9 @@ rebase edit" above). This avoids a separate pass after the rebase.
 
 If a rebase has already completed, review the full stack
 (git log @{u}..HEAD) and fix any messages that no longer match
-their diffs (git diff HEAD~1 for each commit).
+their diffs. Use git show <sha> to inspect each commit's message
+alongside its diff. Note that git diff HEAD~1 only shows the diff
+introduced by HEAD; for other commits use git show.
 
 Do not wait for the user to ask — this check must be automatic after
 every rebase or edit operation that changes commit content.
@@ -428,7 +451,13 @@ How to update messages depends on context:
 - During a rebase edit stop (preferred): amend the message as part
   of the amend step — this is the best time to do it since you are
   already looking at the commit.
-- For the top commit (outside a rebase): use git codereview change.
+- For the top commit (outside a rebase): run git commit --amend
+  with cueckoo rewrite-commit-msg as GIT_EDITOR. This preserves
+  the Change-Id. git codereview reword also works on the top
+  commit, but plain git commit --amend is preferred where the two
+  are equivalent. Do not use git commit --amend -m or
+  git codereview change -m, which replace the message entirely
+  and cause the hooks to generate a new Change-Id.
 - For commits deeper in the stack (outside a rebase): use
   git codereview reword.
 
@@ -526,17 +555,23 @@ applies to. A branch may have multiple pending commits, each a
 separate CL. Use git log @{u}..HEAD to see
 the full stack.
 
-IMPORTANT: do not edit files or stage changes until you are
-positioned at the correct commit. This is a mechanical rule with
-no exceptions — it applies to ALL changes, including seemingly
-trivial ones like adding a comment, fixing a typo, or adding a
-TODO. There is no shortcut. Editing at HEAD and moving changes
-down via stash/pop is error-prone and wastes time. The rebase-edit
+IMPORTANT: HEAD must be the target commit before you edit any
+files or stage any changes. This applies to ALL changes, including
+seemingly trivial ones like adding a comment, fixing a typo, or
+adding a TODO. There is no shortcut. Editing at the top of the
+stack and then trying to move the changes down via stash/pop or
+cherry-pick is error-prone and wastes time — the rebase-edit
 workflow is always faster in practice because it avoids conflict
 resolution.
 
-If the target commit is not at the top of the stack, you must
-rebase first:
+If the target commit is already at the top of the stack, then HEAD
+is already the target: edit the working tree, stage the changes,
+and amend with git commit --amend --no-edit (for code-only edits),
+or with cueckoo rewrite-commit-msg as GIT_EDITOR if the message
+also needs updating.
+
+If the target commit is not at the top of the stack, rebase first
+to position HEAD at it:
 
 1. Use GIT_SEQUENCE_EDITOR to mark the target commit as "edit":
    GIT_SEQUENCE_EDITOR="sed -i '/<sha>/s/pick/edit/'" \
@@ -550,9 +585,6 @@ rebase first:
 Do not make edits at the top of the stack and then try to move
 them down via stash/pop or cherry-pick — this will cause conflicts
 when intermediate commits touch the same code.
-
-If the target commit is already at the top of the stack, simply
-edit the working tree and run git codereview change.
 
 ### GitHub PR workflow
 
@@ -581,8 +613,15 @@ Addressing review feedback:
 - Each comment is like a ticket: either implement the suggestion or
   explain why not
 - Make the code change, push a new commit (or amend and force-push),
-  and reply to each thread explaining what was done — via the
-  GitHub UI or gh pr review
+  and reply to each thread explaining what was done. Reply via the
+  GitHub UI, or with gh api:
+  gh api -X POST \
+    /repos/<owner>/<repo>/pulls/<N>/comments/<comment-id>/replies \
+    -f body="..."
+  Note that gh pr review submits a top-level review with an event
+  (approve / request-changes / comment), not a reply to a specific
+  thread — use it for the overall review verdict, not for per-thread
+  replies
 
 When investigating PR review feedback, examine the code at the
 commit being reviewed: review comments reference line numbers in a
