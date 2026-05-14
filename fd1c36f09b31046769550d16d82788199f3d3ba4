@@ -16,6 +16,24 @@
       "message": "my 2c would be to recommend one and leave it at that, to not be ambiguous. I\u0027d lean towards dropping git-codereview usage where possible, given that we want to move to `jj gerrit` for mailing etc.",
       "revId": "fd1c36f09b31046769550d16d82788199f3d3ba4",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "68b02cd0_00eaf080",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2026-05-14T05:19:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8c014e11_84fb4750",
+      "revId": "fd1c36f09b31046769550d16d82788199f3d3ba4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }

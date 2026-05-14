@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d7e5609f_e4dd6c63",
+        "filename": "cmd/cueckoo/cmd/guidance.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2026-05-14T05:19:26Z",
+      "side": 1,
+      "message": "If we are not recommending this below, should we remove here?",
+      "range": {
+        "startLine": 139,
+        "startChar": 4,
+        "endLine": 139,
+        "endChar": 25
+      },
+      "revId": "0d442d7569864c49a475a6e6c721c1fe301ba0e0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "226f9aee_4432cd24",
+        "filename": "cmd/cueckoo/cmd/guidance.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2026-05-14T05:19:26Z",
+      "side": 1,
+      "message": "If we are not recommending this below, should we remove here?",
+      "range": {
+        "startLine": 143,
+        "startChar": 4,
+        "endLine": 143,
+        "endChar": 25
+      },
+      "revId": "0d442d7569864c49a475a6e6c721c1fe301ba0e0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "18c022a3_21d37cda",
+        "filename": "cmd/cueckoo/cmd/guidance.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2026-05-14T05:19:26Z",
+      "side": 1,
+      "message": "This doesn\u0027t feel like a sensible assumption. It is extremely context sensitive as to where we are now. \n\nIf we are creating a new branch, unless we are told otherwise, a sensible assumption is that we want to target the origin default branch (which therefore needs to be the upstream of the new branch) and that correspondingly we want to branch from the origin default branch tip. We can be explicit about that in our command. Any variation from that (which as I said will come from context) will vary the target branch (and therefore the starting point). \n\nPlease ensure we are clear on this throughout.",
+      "range": {
+        "startLine": 148,
+        "startChar": 50,
+        "endLine": 149,
+        "endChar": 46
+      },
+      "revId": "0d442d7569864c49a475a6e6c721c1fe301ba0e0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "901248dd_b611b4c7",
+        "filename": "cmd/cueckoo/cmd/guidance.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2026-05-14T05:19:26Z",
+      "side": 1,
+      "message": "No need to mention if it\u0027s not in our advice (especially if we have removed the mention of it in the help text above)",
+      "range": {
+        "startLine": 150,
+        "startChar": 28,
+        "endLine": 150,
+        "endChar": 49
+      },
+      "revId": "0d442d7569864c49a475a6e6c721c1fe301ba0e0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
