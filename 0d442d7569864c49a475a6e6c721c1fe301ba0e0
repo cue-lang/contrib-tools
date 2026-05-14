@@ -24,6 +24,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ad3088d1_f1bf955c",
+        "filename": "cmd/cueckoo/cmd/guidance.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2026-05-14T05:26:31Z",
+      "side": 1,
+      "message": "Done. Narrowed the glossary entry to `git codereview change NNNN`, which is the only form still recommended (CL download has no plain-git equivalent).",
+      "parentUuid": "d7e5609f_e4dd6c63",
+      "revId": "0d442d7569864c49a475a6e6c721c1fe301ba0e0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "226f9aee_4432cd24",
@@ -43,6 +61,24 @@
         "endLine": 143,
         "endChar": 25
       },
+      "revId": "0d442d7569864c49a475a6e6c721c1fe301ba0e0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "de7959ec_f92ad28a",
+        "filename": "cmd/cueckoo/cmd/guidance.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2026-05-14T05:26:31Z",
+      "side": 1,
+      "message": "Keeping this entry — `git codereview reword` is still recommended in \"Keeping commit messages accurate\" as the way to rewrite messages on commits deeper in the stack (where there is no equally clean plain-git equivalent), and the \"safe while tests run\" property is genuinely useful. Happy to revisit if you\u0027d prefer to push readers towards a GIT_SEQUENCE_EDITOR-driven plain `git rebase -i` instead.",
+      "parentUuid": "226f9aee_4432cd24",
       "revId": "0d442d7569864c49a475a6e6c721c1fe301ba0e0",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
@@ -70,6 +106,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "127332ec_db3dc97c",
+        "filename": "cmd/cueckoo/cmd/guidance.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2026-05-14T05:26:31Z",
+      "side": 1,
+      "message": "Done. Rewritten to be explicit: `git checkout -b my-branch origin/master` as the default (sets upstream and starting point in one command), with a note that the starting point varies only when context directs otherwise.",
+      "parentUuid": "18c022a3_21d37cda",
+      "revId": "0d442d7569864c49a475a6e6c721c1fe301ba0e0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "901248dd_b611b4c7",
@@ -89,6 +143,24 @@
         "endLine": 150,
         "endChar": 49
       },
+      "revId": "0d442d7569864c49a475a6e6c721c1fe301ba0e0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ad16168e_648a01ab",
+        "filename": "cmd/cueckoo/cmd/guidance.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2026-05-14T05:26:31Z",
+      "side": 1,
+      "message": "Done. Removed the \"does not require git codereview change\" sentence — the glossary above no longer mentions the branch-creation form, so the note was redundant.",
+      "parentUuid": "901248dd_b611b4c7",
       "revId": "0d442d7569864c49a475a6e6c721c1fe301ba0e0",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
