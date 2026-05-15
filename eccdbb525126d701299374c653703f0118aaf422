@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "57719ff9_25d0a7e8",
+        "filename": "CLAUDE.md",
+        "patchSetId": 1
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2026-05-15T20:53:48Z",
+      "side": 1,
+      "message": "What exactly is this a reference to?",
+      "range": {
+        "startLine": 14,
+        "startChar": 2,
+        "endLine": 14,
+        "endChar": 28
+      },
+      "revId": "eccdbb525126d701299374c653703f0118aaf422",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
