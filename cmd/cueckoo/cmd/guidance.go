@@ -17,6 +17,7 @@ package cmd
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"strings"
 )
 
 // commonGuidance is the canonical set of instructions shared across all
@@ -746,12 +747,22 @@ instructions. For example:
 
     ## Common guidance
 
-    Use the cueckoo MCP server's guidance tool to get the latest common
-    guidance for CUE project repos. The server is registered as the
-    cueckoo MCP server (via cueckoo mcp). The response includes a
-    guidance-hash — if a later system-reminder reports a different
-    hash, re-invoke the tool to pick up the changes. Follow all
-    instructions returned by the guidance tool.
+    You MUST load and follow the cueckoo common guidance for this
+    repo. The guidance is served by the cueckoo MCP server
+    (registered via "cueckoo mcp") and is also available from the
+    "cueckoo guidance" CLI. At the start of every session, before
+    doing any work in this repo:
+
+    - If the cueckoo guidance is not already loaded in your context
+      (look for a "=== BEGIN CUECKOO GUIDANCE" line), invoke the
+      cueckoo MCP server's guidance tool now to load it.
+    - If a later system-reminder reports a guidance-hash that
+      differs from the one in your loaded "=== BEGIN CUECKOO
+      GUIDANCE (hash: ...) ===" line, re-invoke the tool to pick
+      up the changes.
+
+    Treat everything between the BEGIN and END markers as
+    authoritative for this session.
 
     ## Project-specific instructions
 
@@ -767,15 +778,15 @@ A CUE project repo opts in to this guidance by committing two pieces of
 configuration alongside its CLAUDE.md:
 
 1. CLAUDE.md prelude — the "Common guidance" section shown under
-   "CLAUDE.md structure" above, which tells Claude to invoke the
-   guidance tool and to re-invoke it when the guidance-hash changes.
+   "CLAUDE.md structure" above, which makes loading the guidance a
+   mandatory step and tells Claude how to detect and re-load it
+   when the guidance-hash changes.
 
 2. .claude/settings.json hook — a SessionStart hook that runs
-   "cueckoo guidance --hash" and injects the current hash into
-   Claude's context on every new session and on "claude -c" resumes,
-   so staleness can be detected without the user having to prompt.
-   The hook entry (merge with any existing hooks rather than
-   overwriting) is:
+   "cueckoo guidance --session-start" and injects the current hash
+   plus an explicit load/reload protocol into Claude's context on
+   every new session and on "claude -c" resumes. The hook entry
+   (merge with any existing hooks rather than overwriting) is:
 
        "hooks": {
          "SessionStart": [
@@ -783,7 +794,7 @@ configuration alongside its CLAUDE.md:
              "hooks": [
                {
                  "type": "command",
-                 "command": "printf 'Current cueckoo guidance-hash: %s\\n' \"$(cueckoo guidance --hash)\""
+                 "command": "cueckoo guidance --session-start"
                }
              ]
            }
@@ -928,16 +939,39 @@ var commonGuidanceHash = func() string {
 	return hex.EncodeToString(sum[:])
 }()
 
-// formattedGuidance returns commonGuidance prefixed with a
-// machine-readable guidance-hash header and an instruction for
-// consumers to re-read the guidance when they see a different hash
-// in a later system-reminder. Both the MCP tool handler and the
+// formattedGuidance returns commonGuidance wrapped in BEGIN/END
+// markers and prefixed with a short instruction to consumers. The
+// BEGIN marker includes the guidance hash so a consumer can detect
+// staleness from a single line. Both the MCP tool handler and the
 // "cueckoo guidance" CLI return this exact text.
 func formattedGuidance() string {
-	return "guidance-hash: " + commonGuidanceHash + "\n\n" +
-		"If a later system-reminder reports a different guidance-hash, " +
-		"re-read this guidance (via the cueckoo guidance MCP tool or " +
-		"the \"cueckoo guidance\" CLI) to pick up the changes.\n\n" +
-		"---\n\n" +
-		commonGuidance
+	body := commonGuidance
+	if !strings.HasSuffix(body, "\n") {
+		body += "\n"
+	}
+	return "You MUST follow the instructions between the BEGIN and END\n" +
+		"markers below for the remainder of this session. Re-invoke this\n" +
+		"tool if a later system-reminder reports a different guidance-hash.\n\n" +
+		"=== BEGIN CUECKOO GUIDANCE (hash: " + commonGuidanceHash + ") ===\n" +
+		body +
+		"=== END CUECKOO GUIDANCE ===\n"
+}
+
+// sessionStartPrompt returns the text emitted by a SessionStart
+// hook: the current hash plus an explicit comparison protocol
+// telling the AI when to load or reload the guidance.
+func sessionStartPrompt() string {
+	return "Current cueckoo guidance-hash: " + commonGuidanceHash + "\n\n" +
+		"You MUST follow the cueckoo common guidance for this session.\n" +
+		"To ensure it is loaded and current:\n\n" +
+		"- If the cueckoo guidance is NOT loaded in your context (no\n" +
+		"  \"=== BEGIN CUECKOO GUIDANCE\" line visible above), invoke\n" +
+		"  the cueckoo MCP server's guidance tool (or run\n" +
+		"  \"cueckoo guidance\") now to load it.\n" +
+		"- If the cueckoo guidance IS loaded, compare the hash above to\n" +
+		"  the hash in the loaded \"=== BEGIN CUECKOO GUIDANCE\n" +
+		"  (hash: ...) ===\" line. If they differ, re-invoke the tool\n" +
+		"  to reload.\n" +
+		"- Treat everything between the BEGIN and END markers as\n" +
+		"  authoritative.\n"
 }

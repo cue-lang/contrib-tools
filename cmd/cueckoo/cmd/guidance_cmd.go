@@ -15,33 +15,48 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 )
 
 func newGuidanceCmd(c *Command) *cobra.Command {
-	var hashOnly bool
+	var hashOnly, sessionStart bool
 	cmd := &cobra.Command{
 		Use:   "guidance",
 		Short: "Print the common guidance for CUE project repos",
 		Long: `Print the common guidance for CUE project repos.
 
-The output matches what the cueckoo MCP server's guidance tool returns,
-including the leading guidance-hash header. With --hash, only the hex
-hash of the current guidance is printed; this form is cheap and is
-intended for use in Claude Code SessionStart hooks that inject the
-current hash into Claude's context so staleness can be detected.
+The default output matches what the cueckoo MCP server's guidance tool
+returns: the guidance body wrapped in BEGIN/END markers (the BEGIN line
+includes the current guidance hash).
+
+With --hash, only the hex hash of the current guidance is printed.
+
+With --session-start, the current hash and an explicit load/reload
+protocol are printed. This form is intended for use in Claude Code
+SessionStart hooks that inject the current state into Claude's context
+on every new or resumed session.
 `,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			out := cmd.OutOrStdout()
-			if hashOnly {
+			switch {
+			case hashOnly && sessionStart:
+				return fmt.Errorf("--hash and --session-start are mutually exclusive")
+			case hashOnly:
 				_, err := out.Write([]byte(commonGuidanceHash + "\n"))
 				return err
+			case sessionStart:
+				_, err := out.Write([]byte(sessionStartPrompt()))
+				return err
+			default:
+				_, err := out.Write([]byte(formattedGuidance()))
+				return err
 			}
-			_, err := out.Write([]byte(formattedGuidance()))
-			return err
 		},
 	}
 	cmd.Flags().BoolVar(&hashOnly, "hash", false, "print only the hex sha256 hash of the guidance")
+	cmd.Flags().BoolVar(&sessionStart, "session-start", false, "print the current hash plus a load/reload protocol for a Claude Code SessionStart hook")
 	return cmd
 }
