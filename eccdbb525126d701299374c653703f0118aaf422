@@ -22,6 +22,29 @@
       },
       "revId": "eccdbb525126d701299374c653703f0118aaf422",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4bec9665_381d3e46",
+        "filename": "cmd/cueckoo/cmd/guidance.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 954,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2026-05-16T06:35:24Z",
+      "side": 1,
+      "message": "Again, what is this a reference to?",
+      "range": {
+        "startLine": 954,
+        "startChar": 11,
+        "endLine": 954,
+        "endChar": 34
+      },
+      "revId": "eccdbb525126d701299374c653703f0118aaf422",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
