@@ -20,6 +20,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "1493b637_f92275d6",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2026-05-18T15:01:35Z",
+      "side": 1,
+      "message": "I meant `~/.claude/cueckoo-common-guidance.md`, of course - I messed up one dash.\n\nAlternatively, perhaps claude can suggest a subdirectory of `~/.claude` that might be more appropriate, like \"projects\" or \"downloads\", so that it stays out of the way of the claude code tool.",
+      "parentUuid": "d61a21ba_fd02dd34",
+      "revId": "9cbb6e985f6a2209a54188e6251296ab2e79b07a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "d45860f2_e5845393",
         "filename": "/COMMIT_MSG",
         "patchSetId": 1
