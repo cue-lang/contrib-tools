@@ -101,7 +101,10 @@ common guidance for the full lifecycle.
 				// to the new binary. Errors here are non-fatal —
 				// the binary upgrade has already succeeded.
 				if terr == nil && target != "" {
-					if err := exec.Command(target, "guidance", "--install").Run(); err != nil {
+					gcmd := exec.Command(target, "guidance", "--install")
+					gcmd.Stdout = os.Stderr
+					gcmd.Stderr = os.Stderr
+					if err := gcmd.Run(); err != nil {
 						fmt.Fprintf(os.Stderr, "cueckoo: warning: failed to install guidance for new version: %v\n", err)
 					}
 				}
