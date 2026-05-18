@@ -1,13 +1,10 @@
 # contrib-tools
 
-## Common guidance
-
-Use the cueckoo MCP server's `guidance` tool to get the latest common
-guidance for CUE project repos. The server is registered as the
-`cueckoo` MCP server (via `cueckoo mcp`). The response includes a
-`guidance-hash` — if a later system-reminder reports a different hash,
-re-invoke the tool to pick up the changes. Follow all instructions
-returned by the `guidance` tool.
+<!-- The CUE project common guidance is imported below, managed by
+     `cueckoo`. If the referenced file is missing on your machine,
+     run `cueckoo guidance --install` to write it. See
+     https://github.com/cue-lang/cue/issues/4355 for context. -->
+@~/.cache/cueckoo/common-guidance.md
 
 ## Project-specific instructions
 

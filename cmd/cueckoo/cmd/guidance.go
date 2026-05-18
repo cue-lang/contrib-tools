@@ -17,6 +17,10 @@ package cmd
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
 )
 
 // commonGuidance is the canonical set of instructions shared across all
@@ -738,44 +742,42 @@ the copyright year for existing files that you change.
 ## CLAUDE.md structure
 
 Each CUE project repo should have a CLAUDE.md file at its root. The
-file should start by bootstrapping from the common guidance provided
-by the cueckoo MCP server's guidance tool, then add any repo-specific
-instructions. For example:
+file should import the cueckoo common guidance via an @-reference
+and then layer on any repo-specific instructions. For example:
 
     # Project Name
 
-    ## Common guidance
-
-    Use the cueckoo MCP server's guidance tool to get the latest common
-    guidance for CUE project repos. The server is registered as the
-    cueckoo MCP server (via cueckoo mcp). The response includes a
-    guidance-hash — if a later system-reminder reports a different
-    hash, re-invoke the tool to pick up the changes. Follow all
-    instructions returned by the guidance tool.
+    <!-- The CUE project common guidance is imported below, managed
+         by cueckoo. If the referenced file is missing on your
+         machine, run "cueckoo guidance --install" to write it. -->
+    @~/.cache/cueckoo/common-guidance.md
 
     ## Project-specific instructions
 
     (repo-specific conventions, build commands, test instructions, etc.)
 
-This structure ensures that common conventions are always up to date
-(served dynamically by the MCP tool) while allowing each repo to layer
-on its own instructions.
+The @-import directive tells the Claude Code harness to inline the
+referenced file's content into the system context at session start
+— before any model turn, no model decision required. The path
+~/.cache/cueckoo/common-guidance.md is a per-machine canonical
+copy, written by cueckoo from its baked-in content.
 
 ## Configuring a repo to use this guidance
 
-A CUE project repo opts in to this guidance by committing two pieces of
-configuration alongside its CLAUDE.md:
+A CUE project repo opts in to this guidance via two pieces of
+committed configuration:
 
-1. CLAUDE.md prelude — the "Common guidance" section shown under
-   "CLAUDE.md structure" above, which tells Claude to invoke the
-   guidance tool and to re-invoke it when the guidance-hash changes.
+1. CLAUDE.md @-import — the
+   "@~/.cache/cueckoo/common-guidance.md" line shown under
+   "CLAUDE.md structure" above. The Claude Code harness inlines
+   the referenced file at session start. No tool call by the
+   model is required, which removes the model-decision gate that
+   bare "load the guidance" recommendations relied on.
 
-2. .claude/settings.json hook — a SessionStart hook that runs
-   "cueckoo guidance --hash" and injects the current hash into
-   Claude's context on every new session and on "claude -c" resumes,
-   so staleness can be detected without the user having to prompt.
-   The hook entry (merge with any existing hooks rather than
-   overwriting) is:
+2. .claude/settings.json SessionStart hook — runs
+   "cueckoo version update" on every new or resumed Claude
+   session. The hook entry (merge with any existing hooks rather
+   than overwriting):
 
        "hooks": {
          "SessionStart": [
@@ -783,24 +785,64 @@ configuration alongside its CLAUDE.md:
              "hooks": [
                {
                  "type": "command",
-                 "command": "printf 'Current cueckoo guidance-hash: %s\\n' \"$(cueckoo guidance --hash)\""
+                 "command": "cueckoo version update"
                }
              ]
            }
          ]
        }
 
-   Commit .claude/settings.json (not .claude/settings.local.json) so
-   every contributor picks up the hook automatically —
-   .claude/settings.local.json is per-contributor state and is not a
-   shared repo asset.
+   "cueckoo version update" is the all-in-one "bring this
+   machine up to date" command. It updates the cueckoo binary
+   (via "go install") if a newer version is available on the Go
+   module proxy, and ensures the on-disk
+   ~/.cache/cueckoo/common-guidance.md file matches what the
+   current binary would write — any drift (file missing,
+   externally updated, manually edited, corrupted) triggers a
+   rewrite. See the lifecycle section below.
 
-A SessionStart hook alone is sufficient: "cueckoo mcp" runs over stdio
-as a child of the Claude Code process, so the guidance served within a
-single session cannot change. The only events that can change it — a
-fresh start or "claude -c" resume — both fire SessionStart.
+   Commit .claude/settings.json (not .claude/settings.local.json)
+   so every contributor picks up the hook automatically.
 
-When asked to configure a repo to follow the cueckoo MCP guidance,
+### Lifecycle of ~/.cache/cueckoo/common-guidance.md
+
+The on-disk guidance file is written by cueckoo and inlined into
+Claude's system context by the @-import in each repo's CLAUDE.md.
+"cueckoo version update" keeps both the binary and the file in
+sync:
+
+- If a newer cueckoo is available on the Go module proxy, the
+  new binary is installed; the new binary then writes the
+  matching guidance file.
+- Otherwise, if the on-disk file differs from what the current
+  cueckoo binary would write — because it is missing, because
+  the binary was updated by some other means (a direct
+  "go install", a package manager, etc.), or because the file
+  has been edited or corrupted — the file is rewritten using
+  the current binary's content.
+- If the file already matches, nothing happens.
+
+The current Claude session does not see refreshed content: the
+@-import was inlined by the harness before any hook fired. The
+next session ("claude -c" resume or a fresh "claude" start)
+sees the up-to-date file. This one-session-behind property is
+unavoidable as long as @-imports resolve before SessionStart
+hooks fire.
+
+For manual operations, "cueckoo guidance --install" force-writes
+the file regardless of its current state, and
+"cueckoo guidance --check" verifies byte-equality (exits
+non-zero on any drift) for use in CI / pre-mail gates.
+
+Platforms: Linux and macOS are supported. Windows is not
+currently supported.
+
+For manual operations:
+
+    cueckoo guidance --install   # write / overwrite the file
+    cueckoo guidance --check     # strict byte equality; CI gate
+
+When asked to configure a repo to follow the cueckoo guidance,
 perform both steps (creating or updating CLAUDE.md and
 .claude/settings.json) and report which files changed.
 
@@ -919,25 +961,71 @@ issue tracker — do not include private details, credentials, or
 other sensitive information in the report.
 `
 
-// commonGuidanceHash is the hex-encoded sha256 of commonGuidance. It
-// is included in responses from the guidance MCP tool and the
-// "cueckoo guidance" CLI so callers can detect when the underlying
-// guidance has changed without re-reading the full body.
+// commonGuidanceHash is the hex-encoded sha256 of commonGuidance.
+// Exposed via "cueckoo guidance --hash" for callers that want a
+// compact fingerprint; not used internally for drift detection
+// (which is a byte comparison against formattedGuidance()).
 var commonGuidanceHash = func() string {
 	sum := sha256.Sum256([]byte(commonGuidance))
 	return hex.EncodeToString(sum[:])
 }()
 
-// formattedGuidance returns commonGuidance prefixed with a
-// machine-readable guidance-hash header and an instruction for
-// consumers to re-read the guidance when they see a different hash
-// in a later system-reminder. Both the MCP tool handler and the
-// "cueckoo guidance" CLI return this exact text.
+// formattedGuidance returns the canonical, on-disk form of the
+// common guidance: the body wrapped in BEGIN/END markers with the
+// current cueckoo version embedded in the BEGIN line, prefaced by
+// a one-paragraph instruction to the reader. Both the MCP tool
+// handler, "cueckoo guidance", and "cueckoo guidance --install"
+// return / write exactly this text.
 func formattedGuidance() string {
-	return "guidance-hash: " + commonGuidanceHash + "\n\n" +
-		"If a later system-reminder reports a different guidance-hash, " +
-		"re-read this guidance (via the cueckoo guidance MCP tool or " +
-		"the \"cueckoo guidance\" CLI) to pick up the changes.\n\n" +
-		"---\n\n" +
-		commonGuidance
+	body := commonGuidance
+	if !strings.HasSuffix(body, "\n") {
+		body += "\n"
+	}
+	return "This file is the CUE project common guidance, managed by cueckoo.\n" +
+		"You MUST follow the instructions between the BEGIN and END markers\n" +
+		"below for the remainder of this session.\n\n" +
+		"=== BEGIN CUECKOO GUIDANCE (cueckoo " + cueckooVersion + ") ===\n" +
+		body +
+		"=== END CUECKOO GUIDANCE ===\n"
+}
+
+// defaultGuidancePath is the canonical on-disk location for the
+// guidance file: ~/.cache/cueckoo/common-guidance.md. Each CUE
+// project repo's CLAUDE.md imports this path via
+// "@~/.cache/cueckoo/common-guidance.md". The path is hardcoded
+// (rather than derived via os.UserCacheDir) so that the @-import
+// string in CLAUDE.md resolves to the same location across
+// platforms; Linux and macOS are the supported targets. Windows
+// is not currently supported.
+func defaultGuidancePath() (string, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", fmt.Errorf("locating user home directory: %w", err)
+	}
+	return filepath.Join(home, ".cache", "cueckoo", "common-guidance.md"), nil
+}
+
+// ensureGuidanceFile ensures the on-disk guidance file at the
+// default path matches formattedGuidance() exactly. If the file is
+// missing, has been externally updated, or has been edited by hand
+// or corrupted, it is rewritten. Reports whether a write happened
+// and whether the file pre-existed (useful for user-facing
+// messaging).
+func ensureGuidanceFile() (written, preExisted bool, path string, err error) {
+	path, err = defaultGuidancePath()
+	if err != nil {
+		return false, false, "", err
+	}
+	existing, readErr := os.ReadFile(path)
+	preExisted = readErr == nil
+	if preExisted && string(existing) == formattedGuidance() {
+		return false, true, path, nil
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return false, preExisted, path, fmt.Errorf("creating %s: %w", filepath.Dir(path), err)
+	}
+	if err := os.WriteFile(path, []byte(formattedGuidance()), 0o644); err != nil {
+		return false, preExisted, path, fmt.Errorf("writing %s: %w", path, err)
+	}
+	return true, preExisted, path, nil
 }

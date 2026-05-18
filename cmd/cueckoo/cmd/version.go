@@ -38,6 +38,21 @@ const (
 	modulePath = "github.com/cue-lang/contrib-tools"
 )
 
+// cueckooVersion is the binary's own version string, as reported by
+// "cueckoo version" and embedded in the on-disk common guidance
+// file's BEGIN marker. For released or proxy-installed builds this
+// is a semver tag (e.g. "v1.2.3"); for builds from a git checkout,
+// Go's VCS stamping produces a pseudo-version including the commit
+// SHA. "(unknown)" if no build info is available (should not happen
+// in practice).
+var cueckooVersion = func() string {
+	bi, ok := runtimedebug.ReadBuildInfo()
+	if !ok {
+		return "(unknown)"
+	}
+	return bi.Main.Version
+}()
+
 func newVersionCmd(c *Command) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "version",
@@ -46,11 +61,7 @@ func newVersionCmd(c *Command) *cobra.Command {
 		// and its subcommands don't trigger the auto-update check.
 		PersistentPreRun: func(_ *cobra.Command, _ []string) {},
 		RunE: mkRunE(c, func(cmd *Command, args []string) error {
-			bi, ok := runtimedebug.ReadBuildInfo()
-			if !ok {
-				return fmt.Errorf("no build info available")
-			}
-			fmt.Fprintf(cmd.OutOrStdout(), "cueckoo version %s\n", bi.Main.Version)
+			fmt.Fprintf(cmd.OutOrStdout(), "cueckoo version %s\n", cueckooVersion)
 			return nil
 		}),
 	}
@@ -61,25 +72,66 @@ func newVersionCmd(c *Command) *cobra.Command {
 func newVersionUpdateCmd(c *Command) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "update",
-		Short: "check for and install the latest version of cueckoo",
+		Short: "update the cueckoo binary and refresh the on-disk common guidance file",
+		Long: `Update the cueckoo binary and refresh the on-disk common guidance file.
+
+The cueckoo binary is updated (via "go install") when a newer version is
+available on the Go module proxy. The on-disk common guidance file is
+rewritten whenever it differs from what the current binary would write.
+See the "Configuring a repo to use this guidance" section of the cueckoo
+common guidance for the full lifecycle.
+`,
 		RunE: mkRunE(c, func(cmd *Command, args []string) error {
+			out := cmd.OutOrStdout()
 			curVersion, latest, hasUpdate := checkForUpdate(true)
-			if !hasUpdate {
-				if curVersion == "" {
-					return fmt.Errorf("no build info available")
+			if hasUpdate {
+				fmt.Fprintf(os.Stderr, "cueckoo: updating %s -> %s ...\n", curVersion, latest.Version)
+				if err := installUpdate(latest.Version); err != nil {
+					return fmt.Errorf("failed to install update: %w", err)
 				}
-				fmt.Fprintf(cmd.OutOrStdout(), "cueckoo: already up to date (%s)\n", curVersion)
+				exe, target, terr := installTarget()
+				if terr == nil && exe != target {
+					fmt.Fprintf(os.Stderr, "cueckoo: note: the running binary %s was not overwritten; the updated binary is at %s\n",
+						exe, target)
+				}
+				// Have the just-installed binary write the
+				// matching guidance file. The running process is
+				// still the OLD cueckoo and cannot write the new
+				// guidance from its own commonGuidance; shell out
+				// to the new binary. Errors here are non-fatal —
+				// the binary upgrade has already succeeded.
+				if terr == nil && target != "" {
+					if err := exec.Command(target, "guidance", "--install").Run(); err != nil {
+						fmt.Fprintf(os.Stderr, "cueckoo: warning: failed to install guidance for new version: %v\n", err)
+					}
+				}
+				fmt.Fprintf(out, "cueckoo: updated to %s\n", latest.Version)
 				return nil
 			}
-			fmt.Fprintf(os.Stderr, "cueckoo: updating %s -> %s ...\n", curVersion, latest.Version)
-			if err := installUpdate(latest.Version); err != nil {
-				return fmt.Errorf("failed to install update: %w", err)
+			if curVersion == "" {
+				return fmt.Errorf("no build info available")
 			}
-			if exe, target, err := installTarget(); err == nil && exe != target {
-				fmt.Fprintf(os.Stderr, "cueckoo: note: the running binary %s was not overwritten; the updated binary is at %s\n",
-					exe, target)
+			// Binary is current. Ensure the on-disk guidance file
+			// matches what we would write (byte equality). Any
+			// drift — file missing, externally updated, manually
+			// edited, or corrupted — triggers a rewrite.
+			// Guidance-file management is best-effort: the binary
+			// check has already succeeded, so a write failure
+			// should warn but not fail the command.
+			written, preExisted, path, err := ensureGuidanceFile()
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "cueckoo: warning: %v\n", err)
+				fmt.Fprintf(out, "cueckoo: already up to date (%s)\n", curVersion)
+				return nil
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "cueckoo: updated to %s\n", latest.Version)
+			switch {
+			case !written:
+				fmt.Fprintf(out, "cueckoo: already up to date (%s)\n", curVersion)
+			case preExisted:
+				fmt.Fprintf(out, "cueckoo: already up to date (%s); refreshed guidance at %s\n", curVersion, path)
+			default:
+				fmt.Fprintf(out, "cueckoo: already up to date (%s); wrote initial guidance to %s\n", curVersion, path)
+			}
 			return nil
 		}),
 	}

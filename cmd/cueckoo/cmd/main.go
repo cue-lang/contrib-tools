@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/exec"
 
 	"github.com/spf13/cobra"
 )
@@ -93,6 +94,15 @@ func newRootCmd() *Command {
 			if err := installUpdate(latest.Version); err != nil {
 				debugf("update install error: %v\n", err)
 				return
+			}
+			// Have the newly-installed binary write the matching
+			// guidance file before we re-exec into it. The running
+			// process is still the OLD binary so it cannot write
+			// the new guidance from its own commonGuidance; shell
+			// out to target. Errors are non-fatal — the binary
+			// upgrade itself has already succeeded.
+			if err := exec.Command(target, "guidance", "--install").Run(); err != nil {
+				debugf("guidance install error: %v\n", err)
 			}
 			if err := reExec(exe); err != nil {
 				debugf("re-exec error: %v\n", err)
