@@ -63,7 +63,7 @@ summary prefixed by the primary affected package or area, e.g.:
 
 The first line should complete the sentence "This change modifies
 <the repo> to ___." — it does not start with a capital letter, is
-not a complete sentence, and summarises the result of the change.
+not a complete sentence, and summarizes the result of the change.
 The test sentence is illustrative; subrepos substitute their own
 name (e.g. "modifies contrib-tools to ___").
 
@@ -691,7 +691,7 @@ When drafting responses:
 
 ## Testing and Reproductions
 
-When investigating CUE behaviour or community-reported issues, create
+When investigating CUE behavior or community-reported issues, create
 standalone .txtar reproduction files using testscript format. The
 testscript CLI used is github.com/rogpeppe/go-internal/cmd/testscript.
 The txtar format is a trivial text-based file archive where files are
@@ -732,6 +732,17 @@ Conventions for txtar reproductions:
 
 See https://github.com/cue-lang/cue/wiki/Creating-test-or-performance-reproducers
 for full details.
+
+## Style
+
+Use American English for all prose written under this guidance —
+commit messages, PR descriptions, code review replies, issue text,
+and any text drafted via the cueckoo MCP tools. For example, write
+"behavior", "summarize", "analyze", "optimize" — not "behaviour",
+"summarise", "analyse", "optimise". This matches the dominant
+convention in CUE source code and existing docs, and avoids
+per-CL drift where AI assistants adopt whichever spelling they see
+in their surrounding context.
 
 ## Copyright Headers
 

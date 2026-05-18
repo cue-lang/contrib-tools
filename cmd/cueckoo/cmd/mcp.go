@@ -92,7 +92,7 @@ The change argument must use one of these prefixed formats:
   git:<ref>          — any git ref (commit SHA, branch, tag, HEAD, HEAD~2, etc.), e.g. git:HEAD
 
 When presenting results, focus on unresolved threads as these need action. For each
-unresolved thread, summarise the feedback and suggest a concrete plan for addressing it.
+unresolved thread, summarize the feedback and suggest a concrete plan for addressing it.
 When the file /COMMIT_MSG appears as a path, present those comments as feedback on the
 commit message itself, not a source file. If all threads are resolved, report that no
 action is needed.

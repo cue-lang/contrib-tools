@@ -55,13 +55,13 @@ type config struct {
 	// githubURL is the URL for the GitHub repo
 	githubURL string
 
-	// githubOwner is the organisation/user to which the GitHub repo belongs
+	// githubOwner is the organization/user to which the GitHub repo belongs
 	githubOwner string
 
 	// githubRepo is the name of the GitHub repo
 	githubRepo string
 
-	// unityOwner is the organisation/user to which the unity repo belongs
+	// unityOwner is the organization/user to which the unity repo belongs
 	unityOwner string
 
 	// unityRepo is the name of the unity repo
