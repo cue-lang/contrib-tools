@@ -3,6 +3,46 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "d61a21ba_fd02dd34",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2026-05-18T14:59:49Z",
+      "side": 1,
+      "message": "it\u0027s a little unfortunate to clutter the home directory further. cueckoo currently only uses OS-specific cache directories, so this introduces a new directory. I get it though, we can\u0027t assume e.g. `~/.cache/cueckoo` here, because that is Linux-specific.\n\nhow about `~/.claude/cueckoo-common.guidance.md`? claude code seems to hard-code `~/.claude/`, perhaps for this reason, so we could piggyback on it. I don\u0027t imagine that us dropping a file in there could cause other problems.",
+      "revId": "9cbb6e985f6a2209a54188e6251296ab2e79b07a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d45860f2_e5845393",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2026-05-18T14:59:49Z",
+      "side": 1,
+      "message": "I don\u0027t see why a person would manually replace the contents. my 2c would be to also update and replace the file in this scenario.",
+      "range": {
+        "startLine": 69,
+        "startChar": 0,
+        "endLine": 70,
+        "endChar": 35
+      },
+      "revId": "9cbb6e985f6a2209a54188e6251296ab2e79b07a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "c12910ba_671b2947",
         "filename": "CLAUDE.md",
         "patchSetId": 1
@@ -14,6 +54,92 @@
       "writtenOn": "2026-05-18T14:35:47Z",
       "side": 1,
       "message": "Does this work on windows? Not critical for now if not, but we should note what the plan is here.",
+      "revId": "9cbb6e985f6a2209a54188e6251296ab2e79b07a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "dfd2d5db_4ac19f68",
+        "filename": "CLAUDE.md",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2026-05-18T14:59:49Z",
+      "side": 1,
+      "message": "given that AFAIK we don\u0027t have any devs on windows, I don\u0027t think this matters for the foreseeable future",
+      "parentUuid": "c12910ba_671b2947",
+      "revId": "9cbb6e985f6a2209a54188e6251296ab2e79b07a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "dfc1671c_b37855c7",
+        "filename": "cmd/cueckoo/cmd/guidance.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1004,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2026-05-18T14:59:49Z",
+      "side": 1,
+      "message": "I would put this in `version.go` and make `cueckoo version` use it as well. even if it\u0027s just five lines of simple code, it feels odd that we don\u0027t reuse the logic to show the current version.",
+      "revId": "9cbb6e985f6a2209a54188e6251296ab2e79b07a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5a66859d_dbcf95c7",
+        "filename": "cmd/cueckoo/cmd/guidance_cmd.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2026-05-18T14:59:49Z",
+      "side": 1,
+      "message": "I don\u0027t quite see why we\u0027d ever need the `--path` flag, especially given how the path is hard-coded in the CLAUDE.md files by design. I\u0027d personally remove, unless there\u0027s a specific need for it very soon",
+      "revId": "9cbb6e985f6a2209a54188e6251296ab2e79b07a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "db9578c5_9425f206",
+        "filename": "cmd/cueckoo/cmd/version.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2026-05-18T14:59:49Z",
+      "side": 1,
+      "message": "the guidance already describes the various scenarios and edge cases, so I would personally not repeat them here. I\u0027d just shortly describe that `version update` updates both the binary itself and the guidance file.",
+      "revId": "9cbb6e985f6a2209a54188e6251296ab2e79b07a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e93d1094_1d7e30a7",
+        "filename": "cmd/cueckoo/cmd/version.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2026-05-18T14:59:49Z",
+      "side": 1,
+      "message": "as mentioned earlier I don\u0027t agree with this; e.g. if a user somehow ends up with a corrupted guidance file, we want to recover from that without requiring user intervention.",
       "revId": "9cbb6e985f6a2209a54188e6251296ab2e79b07a",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
