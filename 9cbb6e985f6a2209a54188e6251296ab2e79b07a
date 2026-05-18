@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c12910ba_671b2947",
+        "filename": "CLAUDE.md",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2026-05-18T14:35:47Z",
+      "side": 1,
+      "message": "Does this work on windows? Not critical for now if not, but we should note what the plan is here.",
+      "revId": "9cbb6e985f6a2209a54188e6251296ab2e79b07a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
