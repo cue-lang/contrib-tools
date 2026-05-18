@@ -61,25 +61,97 @@ func newVersionCmd(c *Command) *cobra.Command {
 func newVersionUpdateCmd(c *Command) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "update",
-		Short: "check for and install the latest version of cueckoo",
+		Short: "update cueckoo and refresh the on-disk common guidance file",
+		Long: `Update cueckoo and refresh the on-disk common guidance file.
+
+This command brings both the cueckoo binary and ~/.cueckoo/common-guidance.md
+into a known-current state. It handles all four lifecycle paths:
+
+  - Happy. Binary is current and the on-disk guidance file's BEGIN-marker
+    version matches; no-op. Within-version local edits to the file body
+    are preserved.
+
+  - Cueckoo-managed upgrade. The Go module proxy has a newer cueckoo;
+    install it, then have the new binary write a fresh guidance file.
+
+  - Bootstrap. Binary is current but the on-disk guidance file does
+    not exist; write it using the running binary's content.
+
+  - External upgrade. Binary is current but the on-disk guidance file
+    records an older cueckoo version (e.g. the binary was updated via
+    "go install" rather than via this command); rewrite the file using
+    the running binary's content.
+
+If the guidance file exists but has no recognisable BEGIN marker, it is
+left alone (the contents are unknown; use "cueckoo guidance --install"
+to force-overwrite).
+`,
 		RunE: mkRunE(c, func(cmd *Command, args []string) error {
+			out := cmd.OutOrStdout()
 			curVersion, latest, hasUpdate := checkForUpdate(true)
-			if !hasUpdate {
-				if curVersion == "" {
-					return fmt.Errorf("no build info available")
+			if hasUpdate {
+				fmt.Fprintf(os.Stderr, "cueckoo: updating %s -> %s ...\n", curVersion, latest.Version)
+				if err := installUpdate(latest.Version); err != nil {
+					return fmt.Errorf("failed to install update: %w", err)
 				}
-				fmt.Fprintf(cmd.OutOrStdout(), "cueckoo: already up to date (%s)\n", curVersion)
+				exe, target, terr := installTarget()
+				if terr == nil && exe != target {
+					fmt.Fprintf(os.Stderr, "cueckoo: note: the running binary %s was not overwritten; the updated binary is at %s\n",
+						exe, target)
+				}
+				// Cueckoo-managed upgrade path: have the just-
+				// installed binary write the matching guidance.
+				// The running process is still the OLD cueckoo
+				// and cannot write the new guidance from its own
+				// commonGuidance; shell out to the new binary,
+				// which writes from its own (updated) content.
+				// Errors here are non-fatal — the binary upgrade
+				// has already succeeded.
+				if terr == nil && target != "" {
+					if err := exec.Command(target, "guidance", "--install").Run(); err != nil {
+						fmt.Fprintf(os.Stderr, "cueckoo: warning: failed to install guidance for new version: %v\n", err)
+					}
+				}
+				fmt.Fprintf(out, "cueckoo: updated to %s\n", latest.Version)
 				return nil
 			}
-			fmt.Fprintf(os.Stderr, "cueckoo: updating %s -> %s ...\n", curVersion, latest.Version)
-			if err := installUpdate(latest.Version); err != nil {
-				return fmt.Errorf("failed to install update: %w", err)
+			if curVersion == "" {
+				return fmt.Errorf("no build info available")
 			}
-			if exe, target, err := installTarget(); err == nil && exe != target {
-				fmt.Fprintf(os.Stderr, "cueckoo: note: the running binary %s was not overwritten; the updated binary is at %s\n",
-					exe, target)
+			// No binary update available. Bring the on-disk
+			// guidance file into sync with the running binary if
+			// necessary (bootstrap or external-upgrade cases).
+			state, path, err := classifyGuidanceFile()
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "cueckoo: warning: classifying guidance file: %v\n", err)
+				fmt.Fprintf(out, "cueckoo: already up to date (%s)\n", curVersion)
+				return nil
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "cueckoo: updated to %s\n", latest.Version)
+			// Guidance-file management is best-effort: we already
+			// know the binary is current, so a guidance write
+			// failure should produce a warning but not fail the
+			// command.
+			switch state {
+			case guidanceCurrent:
+				fmt.Fprintf(out, "cueckoo: already up to date (%s)\n", curVersion)
+			case guidanceMissing:
+				if err := writeGuidanceFile(path); err != nil {
+					fmt.Fprintf(os.Stderr, "cueckoo: warning: writing guidance file: %v\n", err)
+					fmt.Fprintf(out, "cueckoo: already up to date (%s)\n", curVersion)
+				} else {
+					fmt.Fprintf(out, "cueckoo: already up to date (%s); wrote initial guidance to %s\n", curVersion, path)
+				}
+			case guidanceVersionMismatch:
+				if err := writeGuidanceFile(path); err != nil {
+					fmt.Fprintf(os.Stderr, "cueckoo: warning: writing guidance file: %v\n", err)
+					fmt.Fprintf(out, "cueckoo: already up to date (%s)\n", curVersion)
+				} else {
+					fmt.Fprintf(out, "cueckoo: already up to date (%s); refreshed stale guidance at %s\n", curVersion, path)
+				}
+			case guidanceUnrecognised:
+				fmt.Fprintf(os.Stderr, "cueckoo: warning: guidance file %s has no recognisable BEGIN marker; leaving alone (use `cueckoo guidance --install` to force-overwrite)\n", path)
+				fmt.Fprintf(out, "cueckoo: already up to date (%s)\n", curVersion)
+			}
 			return nil
 		}),
 	}
