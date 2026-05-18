@@ -54,6 +54,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "06b35277_e10921b7",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2026-05-18T15:25:23Z",
+      "side": 1,
+      "message": "Done. Switched the canonical location to `~/.cache/cueckoo/common-guidance.md` per the offline conclusion. The path is constructed via `os.UserHomeDir()` + `filepath.Join(home, \".cache\", \"cueckoo\", ...)` rather than `os.UserCacheDir()` so the @-import string in CLAUDE.md resolves to the same place on Linux and macOS.",
+      "parentUuid": "d61a21ba_fd02dd34",
+      "revId": "9cbb6e985f6a2209a54188e6251296ab2e79b07a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d45860f2_e5845393",
@@ -73,6 +91,24 @@
         "endLine": 70,
         "endChar": 35
       },
+      "revId": "9cbb6e985f6a2209a54188e6251296ab2e79b07a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bd872fde_87a6416d",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2026-05-18T15:25:23Z",
+      "side": 1,
+      "message": "Done. Simplified to byte equality: any drift (manual edit, corruption, unrecognised format, missing file, externally-updated binary) triggers a rewrite from the running binary. The four-state classification and version-marker comparison are gone; the logic is now a single `ensureGuidanceFile` helper. This also addresses #e93d1094_1d7e30a7.",
+      "parentUuid": "d45860f2_e5845393",
       "revId": "9cbb6e985f6a2209a54188e6251296ab2e79b07a",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
@@ -112,6 +148,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f17d0f6f_da750c63",
+        "filename": "CLAUDE.md",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2026-05-18T15:25:23Z",
+      "side": 1,
+      "message": "Noted. Added an explicit \"Linux and macOS are supported; Windows is not currently supported\" line to the in-text \"Lifecycle\" section of the common guidance, plus a `defaultGuidancePath` doc comment noting the platform constraint. No code changes for Windows; that\u0027s the plan.",
+      "parentUuid": "c12910ba_671b2947",
+      "revId": "9cbb6e985f6a2209a54188e6251296ab2e79b07a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "dfc1671c_b37855c7",
@@ -125,6 +179,24 @@
       "writtenOn": "2026-05-18T14:59:49Z",
       "side": 1,
       "message": "I would put this in `version.go` and make `cueckoo version` use it as well. even if it\u0027s just five lines of simple code, it feels odd that we don\u0027t reuse the logic to show the current version.",
+      "revId": "9cbb6e985f6a2209a54188e6251296ab2e79b07a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "763310e8_3dee11cc",
+        "filename": "cmd/cueckoo/cmd/guidance.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1004,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2026-05-18T15:25:23Z",
+      "side": 1,
+      "message": "Done. Moved `cueckooVersion` to `version.go` and switched `cueckoo version`\u0027s RunE to use it directly. The \"(unknown)\" fallback for missing build info replaces the prior `fmt.Errorf(\"no build info available\")` — `cueckoo version` now prints `cueckoo version (unknown)` in that edge case rather than erroring.",
+      "parentUuid": "dfc1671c_b37855c7",
       "revId": "9cbb6e985f6a2209a54188e6251296ab2e79b07a",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
@@ -146,6 +218,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "01e7b7cb_1584c3ab",
+        "filename": "cmd/cueckoo/cmd/guidance_cmd.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2026-05-18T15:25:23Z",
+      "side": 1,
+      "message": "Done. Removed `--path`. `--install` and `--check` now operate on the hardcoded default path only.",
+      "parentUuid": "5a66859d_dbcf95c7",
+      "revId": "9cbb6e985f6a2209a54188e6251296ab2e79b07a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "db9578c5_9425f206",
@@ -163,6 +253,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "7f97e36e_2ff3877e",
+        "filename": "cmd/cueckoo/cmd/version.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2026-05-18T15:25:23Z",
+      "side": 1,
+      "message": "Done. The Long is now a short description that defers to the in-text guidance for the details.",
+      "parentUuid": "db9578c5_9425f206",
+      "revId": "9cbb6e985f6a2209a54188e6251296ab2e79b07a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e93d1094_1d7e30a7",
@@ -176,6 +284,24 @@
       "writtenOn": "2026-05-18T14:59:49Z",
       "side": 1,
       "message": "as mentioned earlier I don\u0027t agree with this; e.g. if a user somehow ends up with a corrupted guidance file, we want to recover from that without requiring user intervention.",
+      "revId": "9cbb6e985f6a2209a54188e6251296ab2e79b07a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "89998751_53f88a34",
+        "filename": "cmd/cueckoo/cmd/version.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2026-05-18T15:25:23Z",
+      "side": 1,
+      "message": "Done. The byte-equality simplification means a corrupted file is auto-recovered on the next `cueckoo version update` invocation; there\u0027s no `guidanceUnrecognised` branch any more and no user intervention required.",
+      "parentUuid": "e93d1094_1d7e30a7",
       "revId": "9cbb6e985f6a2209a54188e6251296ab2e79b07a",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
