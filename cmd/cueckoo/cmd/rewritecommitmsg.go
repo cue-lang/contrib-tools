@@ -56,8 +56,8 @@ automatically by git when this command is used as GIT_EDITOR.
 }
 
 // rewriteCommitMsg reads the commit message file at path, extracts the
-// trailers using git interpret-trailers, replaces the body with newMessage,
-// and writes the result back.
+// trailers using git interpret-trailers, replaces the body with newMessage
+// (hard-wrapped at commitBodyWidth columns), and writes the result back.
 func rewriteCommitMsg(path, newMessage string) error {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -70,7 +70,7 @@ func rewriteCommitMsg(path, newMessage string) error {
 	}
 
 	var b strings.Builder
-	b.WriteString(strings.TrimRight(newMessage, "\n"))
+	b.WriteString(strings.TrimRight(wrapCommitBody(newMessage), "\n"))
 	b.WriteString("\n")
 	if trailers != "" {
 		b.WriteString("\n")
@@ -84,6 +84,98 @@ func rewriteCommitMsg(path, newMessage string) error {
 		return fmt.Errorf("writing commit message file: %w", err)
 	}
 	return nil
+}
+
+// commitBodyWidth is the column at which commit message bodies are
+// hard-wrapped. See the "Commit Messages" section of the cueckoo
+// common guidance.
+const commitBodyWidth = 72
+
+// wrapCommitBody hard-wraps the body of a commit message at
+// commitBodyWidth columns. The first line (summary) is always
+// preserved as-is. Blank lines are preserved as paragraph
+// separators. Lines that must not be split — those starting with
+// "Fixes ", "Updates ", or "For " (the issue-reference lines), and
+// any line containing a URL — are emitted verbatim, even if they
+// exceed the wrap width. All other lines are treated as prose:
+// consecutive non-preserve lines are joined into a paragraph and
+// re-flowed to commitBodyWidth.
+func wrapCommitBody(msg string) string {
+	lines := strings.Split(msg, "\n")
+	if len(lines) == 0 {
+		return msg
+	}
+	out := make([]string, 0, len(lines))
+	out = append(out, lines[0])
+
+	var para []string
+	flush := func() {
+		if len(para) == 0 {
+			return
+		}
+		out = append(out, wrapTokens(para, commitBodyWidth)...)
+		para = para[:0]
+	}
+
+	for _, line := range lines[1:] {
+		switch {
+		case line == "":
+			flush()
+			out = append(out, "")
+		case preserveCommitLine(line):
+			flush()
+			out = append(out, line)
+		default:
+			para = append(para, strings.Fields(line)...)
+		}
+	}
+	flush()
+	return strings.Join(out, "\n")
+}
+
+// preserveCommitLine reports whether line must be emitted verbatim
+// by wrapCommitBody (no wrapping, no merging with neighbouring
+// lines). See wrapCommitBody.
+func preserveCommitLine(line string) bool {
+	trimmed := strings.TrimLeft(line, " \t")
+	if strings.HasPrefix(trimmed, "Fixes ") ||
+		strings.HasPrefix(trimmed, "Updates ") ||
+		strings.HasPrefix(trimmed, "For ") {
+		return true
+	}
+	if strings.Contains(line, "://") {
+		return true
+	}
+	return false
+}
+
+// wrapTokens greedy-wraps tokens into lines of at most width
+// columns. A single token longer than width is emitted on its own
+// line and may exceed width.
+func wrapTokens(tokens []string, width int) []string {
+	if len(tokens) == 0 {
+		return nil
+	}
+	var out []string
+	var cur strings.Builder
+	for _, tok := range tokens {
+		if cur.Len() == 0 {
+			cur.WriteString(tok)
+			continue
+		}
+		if cur.Len()+1+len(tok) > width {
+			out = append(out, cur.String())
+			cur.Reset()
+			cur.WriteString(tok)
+			continue
+		}
+		cur.WriteByte(' ')
+		cur.WriteString(tok)
+	}
+	if cur.Len() > 0 {
+		out = append(out, cur.String())
+	}
+	return out
 }
 
 // extractTrailers uses git interpret-trailers --parse to extract trailer

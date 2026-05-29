@@ -109,6 +109,69 @@ Change-Id: Iabcdef
 	}
 }
 
+func TestWrapCommitBody(t *testing.T) {
+	tests := []struct {
+		name string
+		in   string
+		want string
+	}{
+		{
+			name: "summary only",
+			in:   "cmd/foo: short summary",
+			want: "cmd/foo: short summary",
+		},
+		{
+			name: "short body unchanged",
+			in:   "cmd/foo: summary\n\nShort body.",
+			want: "cmd/foo: summary\n\nShort body.",
+		},
+		{
+			name: "long single-line paragraph is wrapped",
+			in:   "cmd/foo: summary\n\nThis is a fairly long paragraph that should be wrapped because it exceeds the seventy-two column limit set by the guidance.",
+			want: "cmd/foo: summary\n\nThis is a fairly long paragraph that should be wrapped because it\nexceeds the seventy-two column limit set by the guidance.",
+		},
+		{
+			name: "pre-wrapped paragraph is re-flowed to same width",
+			in:   "cmd/foo: summary\n\nThis is a fairly long paragraph\nthat should be wrapped because\nit exceeds the seventy-two column\nlimit set by the guidance.",
+			want: "cmd/foo: summary\n\nThis is a fairly long paragraph that should be wrapped because it\nexceeds the seventy-two column limit set by the guidance.",
+		},
+		{
+			name: "URL line preserved verbatim",
+			in:   "cmd/foo: summary\n\nSee the discussion at https://cuelang.org/issue/1234567890 for context.\nMore prose follows.",
+			want: "cmd/foo: summary\n\nSee the discussion at https://cuelang.org/issue/1234567890 for context.\nMore prose follows.",
+		},
+		{
+			name: "Fixes line preserved even when paragraph wraps around it",
+			in:   "cmd/foo: summary\n\nA short body.\n\nFixes cue-lang/cue#4368.",
+			want: "cmd/foo: summary\n\nA short body.\n\nFixes cue-lang/cue#4368.",
+		},
+		{
+			name: "long Fixes line not wrapped",
+			in:   "cmd/foo: summary\n\nA body.\n\nFixes cue-lang/some-very-long-repo-name#123456789012345.",
+			want: "cmd/foo: summary\n\nA body.\n\nFixes cue-lang/some-very-long-repo-name#123456789012345.",
+		},
+		{
+			name: "multiple paragraphs",
+			in:   "cmd/foo: summary\n\nFirst paragraph that is somewhat long and will need to be wrapped at seventy-two columns.\n\nSecond paragraph also reasonably long and likewise requiring a wrap.",
+			want: "cmd/foo: summary\n\nFirst paragraph that is somewhat long and will need to be wrapped at\nseventy-two columns.\n\nSecond paragraph also reasonably long and likewise requiring a wrap.",
+		},
+		{
+			name: "summary line never wrapped even if long",
+			in:   "cmd/foo: a deliberately long summary line that exceeds seventy-two columns by quite a margin",
+			want: "cmd/foo: a deliberately long summary line that exceeds seventy-two columns by quite a margin",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := wrapCommitBody(tt.in)
+			if got != tt.want {
+				t.Errorf("got:\n%s\nwant:\n%s", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestExtractTrailers(t *testing.T) {
 	tests := []struct {
 		name string
