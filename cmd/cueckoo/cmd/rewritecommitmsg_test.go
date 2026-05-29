@@ -109,6 +109,168 @@ Change-Id: Iabcdef
 	}
 }
 
+func TestWrapCommitBody(t *testing.T) {
+	tests := []struct {
+		name string
+		in   string
+		want string
+	}{
+		{
+			name: "summary only",
+			in: `
+cmd/foo: short summary
+`[1:],
+			want: `
+cmd/foo: short summary
+`[1:],
+		},
+		{
+			name: "short body unchanged",
+			in: `
+cmd/foo: summary
+
+Short body.
+`[1:],
+			want: `
+cmd/foo: summary
+
+Short body.
+`[1:],
+		},
+		{
+			name: "long single-line paragraph is wrapped",
+			in: `
+cmd/foo: summary
+
+This is a fairly long paragraph that should be wrapped because it exceeds the seventy-two column limit set by the guidance.
+`[1:],
+			want: `
+cmd/foo: summary
+
+This is a fairly long paragraph that should be wrapped because it
+exceeds the seventy-two column limit set by the guidance.
+`[1:],
+		},
+		{
+			name: "pre-wrapped paragraph is re-flowed to same width",
+			in: `
+cmd/foo: summary
+
+This is a fairly long paragraph
+that should be wrapped because
+it exceeds the seventy-two column
+limit set by the guidance.
+`[1:],
+			want: `
+cmd/foo: summary
+
+This is a fairly long paragraph that should be wrapped because it
+exceeds the seventy-two column limit set by the guidance.
+`[1:],
+		},
+		{
+			name: "two-line paragraph where first line just exceeds width is re-flowed",
+			in: `
+cmd/foo: summary
+
+line that just barely goes over 72 chars in its length and then is followed by
+almost nothing
+`[1:],
+			want: `
+cmd/foo: summary
+
+line that just barely goes over 72 chars in its length and then is
+followed by almost nothing
+`[1:],
+		},
+		{
+			name: "URL line preserved verbatim",
+			in: `
+cmd/foo: summary
+
+See the discussion at https://cuelang.org/issue/1234567890 for context.
+More prose follows.
+`[1:],
+			want: `
+cmd/foo: summary
+
+See the discussion at https://cuelang.org/issue/1234567890 for context.
+More prose follows.
+`[1:],
+		},
+		{
+			name: "Fixes line preserved even when paragraph wraps around it",
+			in: `
+cmd/foo: summary
+
+A short body.
+
+Fixes cue-lang/cue#4368.
+`[1:],
+			want: `
+cmd/foo: summary
+
+A short body.
+
+Fixes cue-lang/cue#4368.
+`[1:],
+		},
+		{
+			name: "long Fixes line not wrapped",
+			in: `
+cmd/foo: summary
+
+A body.
+
+Fixes cue-lang/some-very-long-repo-name#123456789012345.
+`[1:],
+			want: `
+cmd/foo: summary
+
+A body.
+
+Fixes cue-lang/some-very-long-repo-name#123456789012345.
+`[1:],
+		},
+		{
+			name: "multiple paragraphs",
+			in: `
+cmd/foo: summary
+
+First paragraph that is somewhat long and will need to be wrapped at seventy-two columns.
+
+Second paragraph also reasonably long and likewise requiring a wrap.
+`[1:],
+			want: `
+cmd/foo: summary
+
+First paragraph that is somewhat long and will need to be wrapped at
+seventy-two columns.
+
+Second paragraph also reasonably long and likewise requiring a wrap.
+`[1:],
+		},
+		{
+			name: "summary line never wrapped even if long",
+			in: `
+cmd/foo: a deliberately long summary line that exceeds seventy-two columns by quite a margin
+`[1:],
+			want: `
+cmd/foo: a deliberately long summary line that exceeds seventy-two columns by quite a margin
+`[1:],
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := wrapCommitBody(tt.in)
+			if got != tt.want {
+				t.Errorf("got:\n%s\nwant:\n%s", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestExtractTrailers(t *testing.T) {
 	tests := []struct {
 		name string
