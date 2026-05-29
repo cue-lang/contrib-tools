@@ -863,6 +863,34 @@ When asked to configure a repo to follow the cueckoo guidance,
 perform both steps (creating or updating CLAUDE.md and
 .claude/settings.json) and report which files changed.
 
+## Working on issues
+
+When the user references a GitHub issue (e.g. "fix #NNN", "look
+at #NNN", "implement what's described in #NNN"), read both the
+issue body AND every comment before deciding what to do. Comments
+routinely carry clarifications of the original ask, scope changes
+agreed during triage, resolutions of alternative-design questions,
+counter-arguments from maintainers, or notes that part of the
+issue has already been addressed elsewhere — any of which can
+change the right course of action.
+
+Concretely, fetch the issue with the --comments flag, or fetch
+the comments separately:
+
+    gh issue view <N> --repo <owner>/<repo> --comments
+    # or
+    gh api repos/<owner>/<repo>/issues/<N>/comments
+
+The default "gh issue view <N>" omits comments and must not be
+relied on by itself. If the comments are voluminous, summarize
+them — do not skip them.
+
+The same rule applies to GitHub PRs — use
+"gh pr view <N> --comments" — and to Gerrit CLs, where the
+gerrit_comments MCP tool is the canonical source. The "Addressing
+review feedback" subsections above already require this for code
+review feedback; the same discipline applies to issue discussion.
+
 ## Creating issues
 
 When creating issues on any GitHub repository, always check for issue
