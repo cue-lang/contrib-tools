@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b2aba4d9_f78c0e1a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2026-05-29T12:34:10Z",
+      "side": 1,
+      "message": "I\u0027ve also seen this; e.g. I asked it to resolve issue N, where I myself posted the suggested approach in a comment, and it ignored my comment entirely.",
+      "revId": "a166986b8f661e703d92c2b906acb67925df14d3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
