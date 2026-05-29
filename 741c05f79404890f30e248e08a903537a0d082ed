@@ -16,6 +16,24 @@
       "message": "I\u0027d find these test cases much more readable as multiline strings, like\n\n```\nin: `\nhere is a very very very very long line\nend.\n`[1:]\n```\n\nalso, how does this logic handle cases like\n\n```\nline that just barely goes over 72 chars in its length and then is followed by\nalmost nothing\n```\n\nthat should become something like\n\n```\nline that just barely goes over 72 chars in its length and then is followed\nby almost nothing\n```\n\nand not\n\n```\nline that just barely goes over 72 chars in its length and then is followed\nby\nalmost nothing\n```\n\nif this sort of thing is hard to do, perhaps there is an existing library that handles wrapping prose text that we can reuse?",
       "revId": "741c05f79404890f30e248e08a903537a0d082ed",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a0172aba_64375579",
+        "filename": "cmd/cueckoo/cmd/rewritecommitmsg_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2026-05-29T12:40:12Z",
+      "side": 1,
+      "message": "Both addressed in the new patchset.\n\nReadability: converted the multi-line cases in TestWrapCommitBody to the `[1:]` raw-string form you suggested.\n\nAlgorithm: wrapCommitBody accumulates consecutive non-blank, non-preserve input lines into a single token sequence (`para`) before calling wrapTokens, so a paragraph that arrives split across multiple input lines is joined first and then greedy-wrapped as one. For your exact example, that produces\n\n    line that just barely goes over 72 chars in its length and then is\n    followed by almost nothing\n\ni.e. the desired form, not the broken three-line one. Added a test case (\"two-line paragraph where first line just exceeds width is re-flowed\") using your example verbatim to lock the behavior in.\n\nOn reaching for a library: kept the in-tree implementation since the wrap loop is ~25 LOC and the preserve rules (don\u0027t split URLs or \"Fixes\"/\"Updates\"/\"For\" lines) are project-specific — a third-party wrapper would still need a custom shell around it for the same behavior. Happy to revisit if you have a specific library in mind.",
+      "parentUuid": "f63dabaf_6e9b29b4",
+      "revId": "741c05f79404890f30e248e08a903537a0d082ed",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
