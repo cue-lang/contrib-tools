@@ -70,6 +70,11 @@ name (e.g. "modifies contrib-tools to ___").
 Follow the first line with a blank line, then a description that
 provides context and explains what the change does. Write in complete
 sentences with correct punctuation. Do not use markdown or other markup.
+Hard-wrap the body at 72 columns, matching the dominant convention
+across the CUE repos and the Git community default. URLs, the
+"Fixes"/"Updates"/"For" reference lines, and the Signed-off-by and
+Change-Id trailers must each stay on a single line, even when that
+exceeds 72 columns.
 
 Additional conventions:
 - Include a Signed-off-by line (use git commit -s) to assert the
