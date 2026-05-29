@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f63dabaf_6e9b29b4",
+        "filename": "cmd/cueckoo/cmd/rewritecommitmsg_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2026-05-29T12:32:20Z",
+      "side": 1,
+      "message": "I\u0027d find these test cases much more readable as multiline strings, like\n\n```\nin: `\nhere is a very very very very long line\nend.\n`[1:]\n```\n\nalso, how does this logic handle cases like\n\n```\nline that just barely goes over 72 chars in its length and then is followed by\nalmost nothing\n```\n\nthat should become something like\n\n```\nline that just barely goes over 72 chars in its length and then is followed\nby almost nothing\n```\n\nand not\n\n```\nline that just barely goes over 72 chars in its length and then is followed\nby\nalmost nothing\n```\n\nif this sort of thing is hard to do, perhaps there is an existing library that handles wrapping prose text that we can reuse?",
+      "revId": "741c05f79404890f30e248e08a903537a0d082ed",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
