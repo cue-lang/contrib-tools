@@ -760,7 +760,8 @@ and then layer on any repo-specific instructions. For example:
 
     <!-- The CUE project common guidance is imported below, managed
          by cueckoo. If the referenced file is missing on your
-         machine, run "cueckoo guidance --install" to write it. -->
+         machine, run "cueckoo version update" to write it (and
+         pick up any newer cueckoo while you are at it). -->
     @~/.cache/cueckoo/common-guidance.md
 
     ## Project-specific instructions
