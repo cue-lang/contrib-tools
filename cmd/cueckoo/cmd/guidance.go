@@ -638,6 +638,28 @@ specific SHA, which may differ from the current tip. Use
 git show <sha>:<file> or check the PR out locally with
 gh pr checkout <N>.
 
+## Git worktrees
+
+This section applies to both workflows.
+
+When creating a git worktree manually with git worktree add, place
+it under .claude/worktrees/ at the repository root. This matches
+Claude Code's built-in worktree convention — the --worktree flag,
+the EnterWorktree tool, isolated subagents (isolation: "worktree"),
+and parallel or background sessions all default to creating
+worktrees under .claude/worktrees/<name>/ at the repository root.
+Do not create worktrees at arbitrary or sibling paths, and never
+outside the repository — for example, do not fall back to a path
+under $HOME when the repository's parent directory is not writable.
+
+Ensure .claude/worktrees/ is gitignored so nested worktrees do not
+pollute the main checkout's untracked-file status or get staged by
+accident.
+
+Prefer Claude Code's built-in worktree mechanism over a manual
+git worktree add where possible; the rule above governs the cases
+where a worktree is created by hand.
+
 ## CI
 
 IMPORTANT: in the CUE project, "tests" always refers to running the
