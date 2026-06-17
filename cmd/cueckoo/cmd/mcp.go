@@ -215,20 +215,6 @@ The change argument must use one of these prefixed formats:
   git:<ref>          — any git ref (commit SHA, branch, tag, HEAD, HEAD~2, etc.), e.g. git:HEAD`,
 	}, handleGerritDeleteDraft)
 
-	mcp.AddTool(server, &mcp.Tool{
-		Name: "guidance",
-		Description: `Return the latest common guidance/instructions for CUE project repos.
-
-This returns canonical instructions that should be incorporated into each
-repo's CLAUDE.md file. It covers commit message conventions, GerritHub code
-review workflows (including git-codereview usage, working with commit chains,
-editing and splitting commits, and preserving Change-Ids), CI/trybots,
-community support, testing with txtar reproductions, and CLAUDE.md structure.
-
-Call this tool when setting up a new repo or when asked to verify that
-a repo's instructions are current.`,
-	}, handleGuidance)
-
 	return server.Run(ctx, &mcp.StdioTransport{})
 }
 
@@ -270,16 +256,6 @@ func handleDiscordThread(ctx context.Context, req *mcp.CallToolRequest, input di
 	return &mcp.CallToolResult{
 		Content: []mcp.Content{
 			&mcp.TextContent{Text: result},
-		},
-	}, nil, nil
-}
-
-type guidanceInput struct{}
-
-func handleGuidance(ctx context.Context, req *mcp.CallToolRequest, input guidanceInput) (*mcp.CallToolResult, any, error) {
-	return &mcp.CallToolResult{
-		Content: []mcp.Content{
-			&mcp.TextContent{Text: formattedGuidance()},
 		},
 	}, nil, nil
 }

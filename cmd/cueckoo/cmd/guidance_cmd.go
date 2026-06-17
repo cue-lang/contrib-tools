@@ -31,7 +31,9 @@ func newGuidanceCmd(c *Command) *cobra.Command {
 
 With no flags, the canonical guidance content is printed to stdout
 (wrapped in BEGIN/END markers; the BEGIN line includes the current
-cueckoo version). This is also what the MCP guidance tool returns.
+cueckoo version). This is the same content written to
+~/.cache/cueckoo/common-guidance.md and inlined into each repo's
+CLAUDE.md via the @-import.
 
 Other forms:
 

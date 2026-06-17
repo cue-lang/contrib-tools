@@ -20,7 +20,6 @@ assistants like Claude Code. Available tools:
 
 - **gerrit_comments** — fetch review comments from a GerritHub change
 - **trybot_result** — fetch the latest trybot (CI) result for a GerritHub change
-- **guidance** — return the latest common guidance for CUE project repos
 - **slack_thread** — fetch a Slack thread from the CUE community workspace
 - **discord_thread** — fetch a Discord thread from the CUE Discord server
 

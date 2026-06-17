@@ -946,10 +946,12 @@ The protocol has three steps.
 
 ### Step 1: Reload the guidance
 
-Before doing any analysis, re-invoke the guidance tool to ensure
-the current rule wording is in context. The model performing the
-diagnosis must be able to quote the rule verbatim from a freshly
-fetched body — not rely on a faded recollection of it.
+Before doing any analysis, re-read the on-disk guidance file
+(~/.cache/cueckoo/common-guidance.md, the source of the @-import in
+each repo's CLAUDE.md) to ensure the current rule wording is in
+context. The model performing the diagnosis must be able to quote
+the rule verbatim from a freshly read body — not rely on a faded
+recollection of it.
 
 ### Step 2: Classify the failure, with evidence
 
@@ -958,22 +960,25 @@ supports or rules it out. If no mode can be established from
 evidence, report the diagnosis as "inconclusive" rather than
 picking one — speculation is worse than a precise "I do not know."
 
-1. Loading failure. The model never invoked the guidance tool in
-   the session that produced the slip. Confirm by inspecting the
-   session transcript for an mcp__cueckoo__guidance tool call.
-   Present rules out this mode; absent confirms it.
+1. Loading failure. The guidance was never in context — the
+   @-import in the repo's CLAUDE.md did not resolve (for example
+   ~/.cache/cueckoo/common-guidance.md was missing or unreadable
+   at session start). Confirm by checking whether the guidance
+   content is present in the session's system context. Present
+   rules out this mode; absent confirms it.
 
-2. Adherence failure. The model did invoke the tool and the rule
-   was in context, but the model did not apply it. Confirm by
-   asking the in-session model to quote the rule. If it can quote
-   the rule but the slip still occurred, the failure is adherence.
+2. Adherence failure. The guidance was in context (the @-import
+   resolved) and the rule was present, but the model did not apply
+   it. Confirm by asking the in-session model to quote the rule. If
+   it can quote the rule but the slip still occurred, the failure is
+   adherence.
 
-3. Compression failure. The model invoked the tool early in the
-   session but the result was dropped from context by automatic
+3. Compression failure. The guidance was inlined at session start
+   but the relevant rule was dropped from context by automatic
    conversation compression before the violating output was
-   produced. Confirm by checking whether the tool call is present
-   in the transcript but the rule is no longer recoverable from
-   the model's current context (the in-session model can
+   produced. Confirm by checking whether the guidance is present
+   earlier in the session but the rule is no longer recoverable
+   from the model's current context (the in-session model can
    introspect on this directly).
 
 4. Trigger mismatch. The model had the rule in context but its

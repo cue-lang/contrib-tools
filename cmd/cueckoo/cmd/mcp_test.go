@@ -16,7 +16,6 @@ package cmd
 
 import (
 	"context"
-	"strings"
 	"testing"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -176,10 +175,6 @@ func TestMCPToolsRegistered(t *testing.T) {
 		Name:        "gerrit_delete_draft",
 		Description: "Delete a draft reply.",
 	}, handleGerritDeleteDraft)
-	mcp.AddTool(server, &mcp.Tool{
-		Name:        "guidance",
-		Description: "Return common guidance.",
-	}, handleGuidance)
 
 	ss, err := server.Connect(ctx, st, nil)
 	if err != nil {
@@ -211,7 +206,6 @@ func TestMCPToolsRegistered(t *testing.T) {
 		"gerrit_update_draft": false,
 		"gerrit_delete_draft": false,
 		"trybot_result":       false,
-		"guidance":            false,
 	}
 	for _, tool := range res.Tools {
 		if _, ok := wantTools[tool.Name]; ok {
@@ -257,56 +251,5 @@ func TestDeleteGerritDraft_EmptyDraftID(t *testing.T) {
 	_, err := deleteGerritDraft("cl:123", "")
 	if err == nil {
 		t.Fatal("expected error for empty draft_id")
-	}
-}
-
-func TestMCPGuidanceTool(t *testing.T) {
-	ctx := context.Background()
-	ct, st := mcp.NewInMemoryTransports()
-
-	server := mcp.NewServer(&mcp.Implementation{
-		Name:    "cueckoo-test",
-		Version: "v0.0.0-test",
-	}, nil)
-	mcp.AddTool(server, &mcp.Tool{
-		Name:        "guidance",
-		Description: "Return common guidance.",
-	}, handleGuidance)
-
-	ss, err := server.Connect(ctx, st, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer ss.Close()
-
-	client := mcp.NewClient(&mcp.Implementation{
-		Name:    "test-client",
-		Version: "v0.0.0-test",
-	}, nil)
-	cs, err := client.Connect(ctx, ct, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer cs.Close()
-
-	// Call the guidance tool and verify it returns content.
-	result, err := cs.CallTool(ctx, &mcp.CallToolParams{
-		Name: "guidance",
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if result.IsError {
-		t.Fatal("guidance tool returned an error")
-	}
-	if len(result.Content) == 0 {
-		t.Fatal("guidance tool returned no content")
-	}
-	tc, ok := result.Content[0].(*mcp.TextContent)
-	if !ok {
-		t.Fatalf("expected TextContent, got %T", result.Content[0])
-	}
-	if !strings.Contains(tc.Text, "Commit Messages") {
-		t.Errorf("guidance text missing expected section; got:\n%s", tc.Text[:200])
 	}
 }
