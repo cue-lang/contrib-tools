@@ -24,13 +24,14 @@ import (
 )
 
 // commonGuidance is the canonical set of instructions shared across all
-// CUE project repos. It is returned by the "guidance" MCP tool and can
-// be used to keep per-repo CLAUDE.md files in sync.
+// CUE project repos. It is written to the per-machine cache file by the
+// guidance command and incorporated into each repo's CLAUDE.md via an
+// @-import.
 const commonGuidance = `# CUE Project — Common Guidance
 
 This guidance applies to all repositories in the CUE project. It is
-served by the cueckoo MCP server and should be incorporated into each
-repo's CLAUDE.md.
+managed by cueckoo and should be incorporated into each repo's
+CLAUDE.md.
 
 ## Repo workflows: GerritHub vs GitHub-PR-only
 
