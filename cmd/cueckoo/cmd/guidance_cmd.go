@@ -108,7 +108,7 @@ func runGuidanceCheck() error {
 		return fmt.Errorf("reading %s: %w", p, err)
 	}
 	if string(existing) != formattedGuidance() {
-		return fmt.Errorf("guidance file %s does not match the current cueckoo (%s) — run `cueckoo guidance --install` to refresh", p, cueckooVersion)
+		return fmt.Errorf("guidance file %s does not match this cueckoo binary's guidance — run `cueckoo guidance --install` to refresh", p)
 	}
 	return nil
 }

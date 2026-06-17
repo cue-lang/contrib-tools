@@ -1034,20 +1034,32 @@ other sensitive information in the report.
 `
 
 // commonGuidanceHash is the hex-encoded sha256 of commonGuidance.
-// Exposed via "cueckoo guidance --hash" for callers that want a
-// compact fingerprint; not used internally for drift detection
-// (which is a byte comparison against formattedGuidance()).
+// Exposed via "cueckoo guidance --hash", and a truncated form is
+// embedded in the BEGIN marker of formattedGuidance so the on-disk /
+// imported text changes only when the guidance content changes. It is
+// not used for drift detection, which is a byte comparison against
+// formattedGuidance().
 var commonGuidanceHash = func() string {
 	sum := sha256.Sum256([]byte(commonGuidance))
 	return hex.EncodeToString(sum[:])
 }()
 
 // formattedGuidance returns the canonical, on-disk form of the
-// common guidance: the body wrapped in BEGIN/END markers with the
-// current cueckoo version embedded in the BEGIN line, prefaced by
-// a one-paragraph instruction to the reader. Both the MCP tool
-// handler, "cueckoo guidance", and "cueckoo guidance --install"
-// return / write exactly this text.
+// common guidance: the body wrapped in BEGIN/END markers with a
+// fingerprint of the guidance content embedded in the BEGIN line,
+// prefaced by a one-paragraph instruction to the reader. Both
+// "cueckoo guidance" and "cueckoo guidance --install" return / write
+// exactly this text.
+//
+// The BEGIN marker carries the content fingerprint (commonGuidanceHash)
+// rather than the cueckoo version. The guidance is inlined into every
+// Claude Code session via the @-import in each repo's CLAUDE.md, which
+// forms part of the prompt-cached prefix. Embedding the version would
+// change this text on every cueckoo release — busting the cache for
+// every contributor on their next session even when the guidance is
+// byte-for-byte identical. Keying the marker on the content hash means
+// the text changes only when the guidance actually changes, which is
+// exactly when a cache miss is warranted.
 func formattedGuidance() string {
 	body := commonGuidance
 	if !strings.HasSuffix(body, "\n") {
@@ -1056,7 +1068,7 @@ func formattedGuidance() string {
 	return "This file is the CUE project common guidance, managed by cueckoo.\n" +
 		"You MUST follow the instructions between the BEGIN and END markers\n" +
 		"below for the remainder of this session.\n\n" +
-		"=== BEGIN CUECKOO GUIDANCE (cueckoo " + cueckooVersion + ") ===\n" +
+		"=== BEGIN CUECKOO GUIDANCE (sha256:" + commonGuidanceHash[:12] + ") ===\n" +
 		body +
 		"=== END CUECKOO GUIDANCE ===\n"
 }
