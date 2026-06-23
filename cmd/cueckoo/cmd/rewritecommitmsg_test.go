@@ -259,6 +259,65 @@ cmd/foo: a deliberately long summary line that exceeds seventy-two columns by qu
 cmd/foo: a deliberately long summary line that exceeds seventy-two columns by quite a margin
 `[1:],
 		},
+		{
+			// TODO: a tab-indented quote should be preserved verbatim;
+			// the leading tab is currently stripped and the line reflowed.
+			name: "tab-indented quote preserved verbatim",
+			in: `
+cmd/foo: summary
+
+Consider the command below:
+
+	cue export --out yaml+indentSeq=false foo.cue
+
+That emits compact YAML.
+`[1:],
+			want: `
+cmd/foo: summary
+
+Consider the command below:
+
+cue export --out yaml+indentSeq=false foo.cue
+
+That emits compact YAML.
+`[1:],
+		},
+		{
+			// TODO: a four-space-indented quote should be preserved
+			// verbatim; the indentation is currently stripped.
+			name: "four-space-indented quote preserved verbatim",
+			in: `
+cmd/foo: summary
+
+Consider the command below:
+
+    cue export --out yaml+indentSeq=false foo.cue
+
+That emits compact YAML.
+`[1:],
+			want: `
+cmd/foo: summary
+
+Consider the command below:
+
+cue export --out yaml+indentSeq=false foo.cue
+
+That emits compact YAML.
+`[1:],
+		},
+		{
+			name: "indentation under four spaces is reflowed as prose",
+			in: `
+cmd/foo: summary
+
+  this short line keeps under four spaces of indent
+`[1:],
+			want: `
+cmd/foo: summary
+
+this short line keeps under four spaces of indent
+`[1:],
+		},
 	}
 
 	for _, tt := range tests {
