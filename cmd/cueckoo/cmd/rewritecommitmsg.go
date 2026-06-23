@@ -97,8 +97,11 @@ const commitBodyWidth = 72
 // separators. Lines that must not be split — those starting with
 // "Fixes ", "Updates ", or "For " (the issue-reference lines), and
 // any line containing a URL — are emitted verbatim, even if they
-// exceed the wrap width. All other lines are treated as prose:
-// consecutive non-preserve lines are joined into a paragraph and
+// exceed the wrap width. Indented quote lines — those beginning with a
+// tab or with four or more spaces — are likewise treated as
+// preformatted blocks (e.g. example commands) and emitted verbatim with
+// their leading whitespace intact. All other lines are treated as
+// prose: consecutive non-preserve lines are joined into a paragraph and
 // re-flowed to commitBodyWidth.
 func wrapCommitBody(msg string) string {
 	lines := strings.Split(msg, "\n")
@@ -137,6 +140,11 @@ func wrapCommitBody(msg string) string {
 // by wrapCommitBody (no wrapping, no merging with neighbouring
 // lines). See wrapCommitBody.
 func preserveCommitLine(line string) bool {
+	// Indented quote lines (a leading tab, or four or more spaces) are
+	// preformatted blocks such as example commands; keep them verbatim.
+	if strings.HasPrefix(line, "\t") || strings.HasPrefix(line, "    ") {
+		return true
+	}
 	trimmed := strings.TrimLeft(line, " \t")
 	if strings.HasPrefix(trimmed, "Fixes ") ||
 		strings.HasPrefix(trimmed, "Updates ") ||

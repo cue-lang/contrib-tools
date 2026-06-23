@@ -260,8 +260,6 @@ cmd/foo: a deliberately long summary line that exceeds seventy-two columns by qu
 `[1:],
 		},
 		{
-			// TODO: a tab-indented quote should be preserved verbatim;
-			// the leading tab is currently stripped and the line reflowed.
 			name: "tab-indented quote preserved verbatim",
 			in: `
 cmd/foo: summary
@@ -277,14 +275,12 @@ cmd/foo: summary
 
 Consider the command below:
 
-cue export --out yaml+indentSeq=false foo.cue
+	cue export --out yaml+indentSeq=false foo.cue
 
 That emits compact YAML.
 `[1:],
 		},
 		{
-			// TODO: a four-space-indented quote should be preserved
-			// verbatim; the indentation is currently stripped.
 			name: "four-space-indented quote preserved verbatim",
 			in: `
 cmd/foo: summary
@@ -300,7 +296,7 @@ cmd/foo: summary
 
 Consider the command below:
 
-cue export --out yaml+indentSeq=false foo.cue
+    cue export --out yaml+indentSeq=false foo.cue
 
 That emits compact YAML.
 `[1:],
