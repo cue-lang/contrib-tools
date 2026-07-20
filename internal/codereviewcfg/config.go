@@ -68,13 +68,22 @@ func nonBlankLines(text string) []string {
 	return out
 }
 
-func GerritURLToServer(urlString string) (string, error) {
+// GerritURLToParts splits a Gerrit repo URL such as
+// https://cue.gerrithub.io/a/cue-lang/cue into the server base URL
+// and the Gerrit project name, e.g. "https://cue.gerrithub.io" and
+// "cue-lang/cue".
+func GerritURLToParts(urlString string) (server, project string, err error) {
 	u, err := url.Parse(urlString)
 	if err != nil {
-		return "", fmt.Errorf("failed to parse URL from %q: %v", urlString, err)
+		return "", "", fmt.Errorf("failed to parse URL from %q: %v", urlString, err)
+	}
+	project = strings.TrimPrefix(u.Path, "/")
+	project = strings.TrimPrefix(project, "a/")
+	if project == "" {
+		return "", "", fmt.Errorf("no Gerrit project in URL %q", urlString)
 	}
 	u.Path = ""
-	return u.String(), nil
+	return u.String(), project, nil
 }
 
 func GithubURLToParts(urlString string) (string, string, error) {

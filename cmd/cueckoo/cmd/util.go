@@ -52,6 +52,9 @@ type config struct {
 	// gerritURL is the URL of the Gerrit instance
 	gerritURL string
 
+	// gerritProject is the name of the Gerrit project, e.g. "cue-lang/cue"
+	gerritProject string
+
 	// githubURL is the URL for the GitHub repo
 	githubURL string
 
@@ -94,9 +97,9 @@ func loadConfig(ctx context.Context) (*config, error) {
 	if gerritURL == "" {
 		return nil, fmt.Errorf("missing Gerrit server in codereview config")
 	}
-	res.gerritURL, err = codereviewcfg.GerritURLToServer(gerritURL)
+	res.gerritURL, res.gerritProject, err = codereviewcfg.GerritURLToParts(gerritURL)
 	if err != nil {
-		return nil, fmt.Errorf("failed to derived Gerrit server from %v: %v", gerritURL, err)
+		return nil, fmt.Errorf("failed to derive Gerrit server and project from %v: %v", gerritURL, err)
 	}
 
 	githubURL := cfg["github"]

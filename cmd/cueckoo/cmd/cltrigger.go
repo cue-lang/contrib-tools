@@ -135,7 +135,7 @@ func (c *cltrigger) deriveChangeIDs(args []string) (res []revision, err error) {
 		targetBranch = strings.TrimPrefix(targetBranch, "origin/") // no remote name prefix
 		if targetBranch != "" {
 			changeID = url.PathEscape(
-				c.cfg.githubOwner + "/" + c.cfg.githubRepo +
+				c.cfg.gerritProject +
 					"~" +
 					targetBranch +
 					"~" +
