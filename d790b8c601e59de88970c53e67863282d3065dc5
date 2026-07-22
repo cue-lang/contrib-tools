@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a78032be_ae4f8078",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1013536
+      },
+      "writtenOn": "2026-07-22T08:35:19Z",
+      "side": 1,
+      "message": "That\u0027s a whole lot shorter than Fable came up with using hooks. If this works, this is preferably, so let\u0027s give it a try.",
+      "revId": "d790b8c601e59de88970c53e67863282d3065dc5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
