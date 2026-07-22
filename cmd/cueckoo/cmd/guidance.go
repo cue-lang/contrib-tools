@@ -80,7 +80,18 @@ exceeds 72 columns.
 Additional conventions:
 - Include a Signed-off-by line (use git commit -s) to assert the
   Developer Certificate of Origin
-- No AI authorship attribution in commit messages
+- Disclose AI assistance with an Assisted-by trailer. Any commit
+  authored or substantially assisted by an AI tool must carry a
+  trailer naming the tool and, where known, the model, e.g.
+  "Assisted-by: Claude Code (claude-fable-5)". Place it with the
+  other trailers, alongside Signed-off-by. When amending, rebasing,
+  or splitting commits, preserve existing Assisted-by trailers just
+  as you would Signed-off-by and Change-Id — and add one if your
+  assistance makes a previously unassisted commit AI-assisted.
+  Signed-off-by remains reserved for humans: it asserts the
+  Developer Certificate of Origin, which an AI cannot do. Never name
+  an AI in a Co-authored-by trailer, and do not add any other form
+  of AI authorship attribution
 - Reference issues with "Fixes #NNN" (closes the issue on submit) or
   "Updates #NNN" (links without closing). For subrepositories, use
   the fully-qualified form: "Fixes cue-lang/cue#NNN". These lines
