@@ -205,25 +205,40 @@ func installUpdate(version string) error {
 // installTarget reports the path of the currently running binary and the path
 // where `go install` would write the updated binary. When they differ,
 // re-execing the current binary after install would just run the old code.
-// TODO(mvdan): simplify once https://github.com/golang/go/issues/23439
-// is resolved so that `go env GOBIN` always gives a directory.
+// TODO(mvdan): simplify once https://go.dev/issue/23439 is resolved so
+// that `go env GOBIN` always gives a directory.
 func installTarget() (exe, target string, err error) {
 	exe, err = os.Executable()
 	if err != nil {
 		return "", "", err
 	}
-	out, err := exec.Command("go", "env", "GOBIN", "GOPATH").Output()
+	out, err := exec.Command("go", "env", "-json", "GOBIN", "GOPATH").Output()
 	if err != nil {
 		return exe, "", err
 	}
-	lines := strings.Split(strings.TrimSpace(string(out)), "\n")
-	if gobin := lines[0]; gobin != "" {
-		return exe, filepath.Join(gobin, "cueckoo"), nil
+	target, err = parseInstallTarget(out)
+	return exe, target, err
+}
+
+// parseInstallTarget derives the `go install` destination for the cueckoo
+// binary from the output of `go env -json GOBIN GOPATH`. The -json form keys
+// each value by name, so an unset GOBIN is an empty string rather than an
+// empty line whose position has to be tracked.
+func parseInstallTarget(out []byte) (string, error) {
+	var env struct {
+		GOBIN  string
+		GOPATH string
 	}
-	if gopath := lines[1]; gopath != "" {
-		return exe, filepath.Join(gopath, "bin", "cueckoo"), nil
+	if err := json.Unmarshal(out, &env); err != nil {
+		return "", fmt.Errorf("parsing go env output %q: %w", out, err)
 	}
-	return exe, "", fmt.Errorf("neither GOBIN nor GOPATH is set")
+	if env.GOBIN != "" {
+		return filepath.Join(env.GOBIN, "cueckoo"), nil
+	}
+	if env.GOPATH != "" {
+		return filepath.Join(env.GOPATH, "bin", "cueckoo"), nil
+	}
+	return "", fmt.Errorf("neither GOBIN nor GOPATH is set")
 }
 
 // cachedProxyInfo returns the proxy info, fetching from the proxy

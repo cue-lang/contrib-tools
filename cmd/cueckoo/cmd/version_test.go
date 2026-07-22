@@ -25,6 +25,70 @@ import (
 	"github.com/rogpeppe/go-internal/testscript"
 )
 
+func TestParseInstallTarget(t *testing.T) {
+	cases := []struct {
+		name    string
+		out     string
+		want    string
+		wantErr bool
+	}{
+		{
+			name: "GOBIN set",
+			out: `{
+	"GOBIN": "/home/user/bin",
+	"GOPATH": "/home/user/go"
+}
+`,
+			want: filepath.Join("/home/user/bin", "cueckoo"),
+		},
+		{
+			name: "GOBIN unset",
+			out: `{
+	"GOBIN": "",
+	"GOPATH": "/home/user/go"
+}
+`,
+			want: filepath.Join("/home/user/go", "bin", "cueckoo"),
+		},
+		{
+			name: "neither set",
+			out: `{
+	"GOBIN": "",
+	"GOPATH": ""
+}
+`,
+			wantErr: true,
+		},
+		{
+			name:    "malformed output",
+			out:     "not json",
+			wantErr: true,
+		},
+		{
+			name:    "empty output",
+			out:     "",
+			wantErr: true,
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			got, err := parseInstallTarget([]byte(c.out))
+			if c.wantErr {
+				if err == nil {
+					t.Fatalf("expected error, got target %q", got)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got != c.want {
+				t.Errorf("got %q, want %q", got, c.want)
+			}
+		})
+	}
+}
+
 func TestMain(m *testing.M) {
 	testscript.Main(m, map[string]func(){
 		"cueckoo": func() { os.Exit(Main()) },
