@@ -126,13 +126,11 @@ func (c *cltrigger) deriveChangeIDs(args []string) (res []revision, err error) {
 		if err != nil {
 			return fmt.Errorf("failed to derive change ID: %v", err)
 		}
-		// If HEAD is tracking an origin remote branch,
+		// If HEAD is tracking a remote branch,
 		// make the changeID include the project name and target branch,
 		// which will make the changeID string be an unique identifier.
 		// See [revision.changeID].
-		targetBranch, _ := run(ctx, "git", "rev-parse", "--abbrev-ref", "HEAD@{u}")
-		targetBranch = strings.TrimSpace(targetBranch)             // no trailing newline
-		targetBranch = strings.TrimPrefix(targetBranch, "origin/") // no remote name prefix
+		targetBranch := gerritTargetBranch(ctx)
 		if targetBranch != "" {
 			changeID = url.PathEscape(
 				c.cfg.gerritProject +
@@ -185,6 +183,16 @@ func (c *cltrigger) deriveChangeIDs(args []string) (res []revision, err error) {
 		}
 	}
 	return
+}
+
+// gerritTargetBranch returns the branch that a CL mailed from HEAD would
+// target on Gerrit: the remote-side name of the branch that HEAD tracks.
+// It returns the empty string if HEAD has no upstream configured.
+func gerritTargetBranch(ctx context.Context) string {
+	targetBranch, _ := run(ctx, "git", "rev-parse", "--abbrev-ref", "HEAD@{u}")
+	targetBranch = strings.TrimSpace(targetBranch)             // no trailing newline
+	targetBranch = strings.TrimPrefix(targetBranch, "origin/") // no remote name prefix
+	return targetBranch
 }
 
 type commit struct {
