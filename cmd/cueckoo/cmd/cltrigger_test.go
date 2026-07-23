@@ -27,9 +27,7 @@ func TestGerritTargetBranch(t *testing.T) {
 		want   string
 	}{
 		{name: "origin remote", remote: "origin", want: "master"},
-		// TODO: want "master"; the remote name wrongly leaks into the
-		// Gerrit change identifier when the remote is not named origin.
-		{name: "non-origin remote", remote: "cuelabs", want: "cuelabs/master"},
+		{name: "non-origin remote", remote: "cuelabs", want: "master"},
 		{name: "no upstream", remote: "", want: ""},
 	}
 	for _, tt := range tests {

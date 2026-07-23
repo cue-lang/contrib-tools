@@ -189,10 +189,15 @@ func (c *cltrigger) deriveChangeIDs(args []string) (res []revision, err error) {
 // target on Gerrit: the remote-side name of the branch that HEAD tracks.
 // It returns the empty string if HEAD has no upstream configured.
 func gerritTargetBranch(ctx context.Context) string {
-	targetBranch, _ := run(ctx, "git", "rev-parse", "--abbrev-ref", "HEAD@{u}")
-	targetBranch = strings.TrimSpace(targetBranch)             // no trailing newline
-	targetBranch = strings.TrimPrefix(targetBranch, "origin/") // no remote name prefix
-	return targetBranch
+	head, _ := run(ctx, "git", "rev-parse", "--abbrev-ref", "HEAD")
+	head = strings.TrimSpace(head)
+	if head == "" {
+		return ""
+	}
+	// branch.<name>.merge holds the upstream ref as named on the remote,
+	// e.g. refs/heads/master, regardless of what the remote is called.
+	merge, _ := run(ctx, "git", "config", "branch."+head+".merge")
+	return strings.TrimPrefix(strings.TrimSpace(merge), "refs/heads/")
 }
 
 type commit struct {
