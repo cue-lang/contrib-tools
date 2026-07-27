@@ -118,6 +118,61 @@ Additional conventions:
   preserve and add Change-Ids correctly. GitHub-PR-only repos do
   not use Change-Ids
 
+## Work branches and upstreams
+
+This section applies to both workflows.
+
+Create a work branch off the remote branch the work targets, naming
+that base explicitly:
+
+    git checkout -b my-branch origin/master
+
+Naming the base does two things: it starts the branch at the remote
+tip rather than at wherever HEAD happens to be — a bare
+"git checkout -b my-branch" silently branches from the current
+commit, which on a detached HEAD is very unlikely to be the intended
+base — and it sets the branch's upstream to that base. Vary the
+starting point only when context explicitly directs otherwise (e.g.
+when building on someone else's branch).
+
+Which branch to name varies by repo. CUE repos use master or main,
+and it does not follow from the workflow: GerritHub and
+GitHub-PR-only repos each include some of both. Determine it rather
+than assume it — "git remote show origin" reports the HEAD branch,
+and "git branch -r" lists what exists. Do not reach for origin/HEAD
+as a way to avoid choosing: it is a local cache written by
+git clone, so it is missing on remotes added by hand, and
+git fetch does not refresh it, so it can be left dangling or naming
+a branch that is no longer the default.
+
+IMPORTANT: when comparing a branch against its upstream base, always
+use @{u} (git shorthand for the upstream tracking branch) rather than
+hardcoding a branch name like "master" or "origin/master". There may
+not be a local master branch, and the actual divergence point may
+differ. For example:
+
+    git diff @{u}
+    git log --oneline @{u}..HEAD
+
+Keeping the upstream pointed at the base is what makes those
+commands meaningful: "git log @{u}..HEAD" reads as "the commits this
+branch adds", at any point before or after pushing.
+
+IMPORTANT: never rebind a work branch's upstream to the remote copy
+of the branch itself. In particular, do not use "git push -u" (or
+"git branch -u") on a work branch. The -u flag does not merely add a
+missing upstream, it overwrites an existing one — repointing it from
+origin/master to origin/my-branch. The branch and its upstream are
+then identical by construction, so "git log @{u}..HEAD" reports no
+commits and "git diff @{u}" is empty. The failure is silent: empty
+output looks like "no pending work" rather than "wrong reference".
+
+Push with an explicit refspec and no -u — "git codereview mail" on
+GerritHub repos, "git push origin HEAD" on GitHub-PR-only repos.
+Neither touches the branch's upstream. "git push origin HEAD" still
+updates the remote-tracking ref (origin/my-branch) for the pushed
+branch, which is all that tooling such as gh needs.
+
 ## Code Review
 
 Code review happens on GerritHub (for repos with a codereview.cfg)
@@ -146,15 +201,6 @@ for managing Gerrit changes. It is installed on all CUE maintainer
 machines and available as "git codereview" (a git subcommand). Use it
 for all Gerrit interactions — do not use raw git push to Gerrit.
 
-IMPORTANT: when comparing a branch against its upstream base, always
-use @{u} (git shorthand for the upstream tracking branch) rather than
-hardcoding a branch name like "master" or "origin/master". There may
-not be a local master branch, and the actual divergence point may
-differ. For example:
-
-    git diff @{u}
-    git log --oneline @{u}..HEAD
-
 Key commands (use "git codereview <command> -h" for full usage):
 
     git codereview change NNNN  fetch and check out an existing Gerrit CL
@@ -166,15 +212,8 @@ Key commands (use "git codereview <command> -h" for full usage):
 
 ### GerritHub workflow
 
-- Create a work branch off the upstream's default branch
-  (origin/master for CUE repos):
-
-      git checkout -b my-branch origin/master
-
-  This sets origin/master as the new branch's upstream and starts
-  the branch at the origin tip. Vary the starting point only when
-  context explicitly directs otherwise (e.g. when building on
-  someone else's branch)
+- Create a work branch off the upstream's default branch — see
+  "Work branches and upstreams" above
 - Stage changes and create the first commit: git commit -a -s. The
   codereview commit-msg hook adds the Change-Id automatically and
   the prepare-commit-msg hook adds Signed-off-by (-s also adds it).
@@ -617,10 +656,32 @@ for PR interactions.
 
 Basic workflow:
 
-- Create a work branch: git checkout -b my-branch
+- Create a work branch off the base branch the PR will target — see
+  "Work branches and upstreams" above
 - Stage changes and commit with sign-off: git commit -a -s
-- Push to the remote: git push -u origin my-branch
+- Push to the remote without rebinding the upstream:
+
+      git push origin HEAD
+
+  Do not use "git push -u origin my-branch" here. As described
+  above, -u repoints the upstream at origin/my-branch, which
+  silently breaks @{u}
 - Open a PR: gh pr create
+
+gh pr create does not need the upstream to point at the pushed
+branch. It resolves the PR's head branch from @{push}, falling back
+to the local branch name — not from @{u} — so an upstream pointing
+at the base branch is fine and no extra flags are needed. Two
+caveats:
+
+- The base branch is not taken from the upstream. gh uses --base if
+  given, then the branch's gh-merge-base git config, then the
+  repository's default branch. When targeting any other branch, say
+  so explicitly: gh pr create --base <branch>
+- If push.default is set to upstream or tracking, @{push} resolves
+  to the base branch, and gh would take that as the head branch.
+  Either use a push.default of simple (git's default) or current, or
+  pass gh pr create --head <branch>
 
 A branch with multiple commits becomes a single PR covering all of
 them, not one PR per commit. To update a PR, push new commits or
