@@ -16,6 +16,24 @@
       "message": "Sure, but do we actually have anyone developing on windows? I don\u0027t think we have nor will we soon, so I imagine that maintaining windows support is unnecessary, even if not too hard for now.",
       "revId": "8d65e1c0885a1e356ce99667acab33236ad76571",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f7a5e6d9_ec9df6e4",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2026-07-29T13:27:53Z",
+      "side": 1,
+      "message": "Removing the mention of not supporting Windows, this was a drive-by fix. If we find actual use of `cueckoo` on Windows, we can add tests etc and fix forward.",
+      "parentUuid": "053238d9_a1435b2e",
+      "revId": "8d65e1c0885a1e356ce99667acab33236ad76571",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
