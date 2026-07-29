@@ -70,7 +70,7 @@ func newRootCmd() *Command {
 		Short:        "cueckoo is a development tool for working with the CUE project",
 		SilenceUsage: true,
 		PersistentPreRun: func(_ *cobra.Command, _ []string) {
-			if os.Getenv("_CUECKOO_SELF_UPDATED") != "" {
+			if os.Getenv(selfUpdatedEnv) != "" {
 				return
 			}
 			curVersion, latest, hasUpdate := checkForUpdate(false)
@@ -104,6 +104,9 @@ func newRootCmd() *Command {
 			if err := exec.Command(target, "guidance", "--install").Run(); err != nil {
 				debugf("guidance install error: %v\n", err)
 			}
+			// exe was captured before the install, so it is the path
+			// the new binary has just been written to; re-executing it
+			// runs the new code. reExec does not return on success.
 			if err := reExec(exe); err != nil {
 				debugf("re-exec error: %v\n", err)
 			}

@@ -24,7 +24,6 @@ import (
 	"path/filepath"
 	runtimedebug "runtime/debug"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -36,6 +35,10 @@ const (
 	checkInterval = 24 * time.Hour
 
 	modulePath = "github.com/cue-lang/contrib-tools"
+
+	// selfUpdatedEnv is set on the re-executed process after a successful
+	// self-update, so that it skips the update check rather than looping.
+	selfUpdatedEnv = "_CUECKOO_SELF_UPDATED"
 )
 
 // cueckooVersion is the binary's own version string, as reported by
@@ -177,19 +180,26 @@ func checkForUpdate(forceCheck bool) (curVersion string, latest *proxyInfo, hasU
 }
 
 // installUpdate installs the specified version of cueckoo via go install.
+//
+// The target is normally the running binary, which on Windows the OS will not
+// allow to be deleted or overwritten: a running executable can be renamed,
+// but not unlinked. That works here regardless, because cmd/go handles the
+// case itself — moveOrCopyFile always copies rather than renames on Windows
+// (https://go.dev/issue/22343), and CopyFile falls back to renaming the
+// destination to <name>~ when opening it fails, then writes a fresh binary at
+// the original path and clears the leftover ~ file on the next install. See
+// moveOrCopyFile and CopyFile in cmd/go/internal/work/shell.go.
+//
+// So cueckoo needs no rename dance of its own. Tools that replace a binary
+// without going through the go command do have to implement one; for the
+// general shape of it, and the Windows constraints that force it, see
+// https://github.com/inconshreveable/go-update and
+// https://docs.rs/self-replace.
 func installUpdate(version string) error {
 	cmd := exec.Command("go", "install", "github.com/cue-lang/contrib-tools/cmd/cueckoo@"+version)
 	cmd.Stdout = os.Stderr
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
-}
-
-// reExec replaces the current process with a fresh invocation of the given
-// binary. It sets _CUECKOO_SELF_UPDATED=1 so the new process skips the
-// update check.
-func reExec(exe string) error {
-	os.Setenv("_CUECKOO_SELF_UPDATED", "1")
-	return syscall.Exec(exe, os.Args, os.Environ())
 }
 
 // installTarget reports the path of the currently running binary and the path
