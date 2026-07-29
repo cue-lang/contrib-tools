@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "86c57c15_4206aaef",
+        "filename": "cmd/cueckoo/cmd/guidance.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 862,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2026-07-29T05:16:00Z",
+      "side": 1,
+      "message": "Does this work on windows as we need/want it to?",
+      "revId": "c1ac1e486950c1f4aaf8d4ba7438f383de97ac58",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
