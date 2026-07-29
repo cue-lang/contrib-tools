@@ -944,15 +944,22 @@ hooks fire.
 For manual operations, "cueckoo guidance --install" force-writes
 the file regardless of its current state, and
 "cueckoo guidance --check" verifies byte-equality (exits
-non-zero on any drift) for use in CI / pre-mail gates.
-
-Platforms: Linux and macOS are supported. Windows is not
-currently supported.
-
-For manual operations:
+non-zero on any drift) for use in CI / pre-mail gates:
 
     cueckoo guidance --install   # write / overwrite the file
     cueckoo guidance --check     # strict byte equality; CI gate
+
+cueckoo writes the file to ~/.cache/cueckoo/common-guidance.md on
+every platform. That path is hardcoded rather than derived from
+os.UserCacheDir, so that the @-import in each repo's CLAUDE.md
+resolves to the same location everywhere. The layout is idiomatic on
+Linux and macOS, which are the platforms the mechanism is exercised
+on; it is not the conventional cache location on Windows.
+
+That is a detail of where cueckoo puts one file. It is not a
+statement about which platforms the CUE project supports. Do not
+infer platform-support policy for any repo from this section, and do
+not use it to justify code that fails to build or run on Windows.
 
 When asked to configure a repo to follow the cueckoo guidance,
 perform both steps (creating or updating CLAUDE.md and
@@ -1152,8 +1159,9 @@ func formattedGuidance() string {
 // "@~/.cache/cueckoo/common-guidance.md". The path is hardcoded
 // (rather than derived via os.UserCacheDir) so that the @-import
 // string in CLAUDE.md resolves to the same location across
-// platforms; Linux and macOS are the supported targets. Windows
-// is not currently supported.
+// platforms. Nothing here is Unix-specific, but ~/.cache is only
+// the idiomatic layout on Linux and macOS, which are the platforms
+// the mechanism is exercised on.
 func defaultGuidancePath() (string, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
