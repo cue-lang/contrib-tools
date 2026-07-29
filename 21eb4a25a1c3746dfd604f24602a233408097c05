@@ -1,0 +1,22 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "66270882_5c7d58d0",
+        "filename": "cmd/cueckoo/cmd/guidance.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 862,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2026-07-29T14:28:05Z",
+      "side": 1,
+      "message": "Not verified, and this CL deliberately stops short of claiming that it does.\n\nWhat is documented: home-directory imports are a supported Claude Code feature — the docs give \"@~/.claude/my-project-instructions.md\" as the recommended way to share instructions across worktrees — and Windows is a supported platform (Windows 10 1809+, native installer, managed policy file at C:\\Program Files\\ClaudeCode\\CLAUDE.md). The docs in fact prefer imports over symlinks on Windows, since creating a symlink there needs Administrator privileges or Developer Mode.\n\nWhat is not verified: cueckoo writes the file via os.UserHomeDir(), which on Windows gives %USERPROFILE%\\.cache\\cueckoo\\common-guidance.md. Claude Code\u0027s \"~\" expansion ought to resolve to that same location, but I have not run it on Windows, so I would rather not assert it either way.\n\nThat is why the change only removes the \"Windows is not currently supported\" declaration rather than replacing it with a claim that Windows works. The new wording says just that ~/.cache is the idiomatic layout on Linux and macOS, which are the platforms the mechanism is exercised on — true regardless of how the import behaves on Windows.\n\nConfirming it needs one session on a Windows machine: run \"cueckoo guidance --install\", then \"/context\", and check that the guidance file is listed under \"Memory files\". Happy to add an explicit \"untested on Windows\" note here instead if you would prefer the guidance to say so, though that pulls against removing platform caveats from this section.",
+      "parentUuid": "86c57c15_4206aaef",
+      "revId": "21eb4a25a1c3746dfd604f24602a233408097c05",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
