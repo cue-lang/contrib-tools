@@ -275,6 +275,69 @@ func TestRewriteCommitMsgRejectsOverlongLines(t *testing.T) {
 	}
 }
 
+func TestRewriteCommitMsgFileFlag(t *testing.T) {
+	dir := t.TempDir()
+	editMsg := filepath.Join(dir, "COMMIT_EDITMSG")
+	orig := "cmd/foo: old summary\n\nOld description.\n\nChange-Id: Iabcdef\n"
+	if err := os.WriteFile(editMsg, []byte(orig), 0666); err != nil {
+		t.Fatal(err)
+	}
+	msgFile := filepath.Join(dir, "msg.txt")
+	// A message that could not survive shell quoting as an inline
+	// -m argument in GIT_EDITOR.
+	newMsg := "cmd/foo: new summary\n\nIt's got an apostrophe and \"quotes\".\n"
+	if err := os.WriteFile(msgFile, []byte(newMsg), 0666); err != nil {
+		t.Fatal(err)
+	}
+
+	cmd := newRewriteCommitMsgCmd(nil)
+	cmd.SetArgs([]string{"-F", msgFile, editMsg})
+	if err := cmd.Execute(); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := os.ReadFile(editMsg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "cmd/foo: new summary\n\nIt's got an apostrophe and \"quotes\".\n\nChange-Id: Iabcdef\n"
+	if string(got) != want {
+		t.Errorf("got:\n%s\nwant:\n%s", got, want)
+	}
+}
+
+func TestRewriteCommitMsgFlagValidation(t *testing.T) {
+	tests := []struct {
+		name    string
+		args    []string
+		wantErr string
+	}{
+		{
+			name:    "-m and -F are mutually exclusive",
+			args:    []string{"-m", "x", "-F", "y", "unused"},
+			wantErr: "mutually exclusive",
+		},
+		{
+			name:    "one of -m or -F is required",
+			args:    []string{"unused"},
+			wantErr: "one of -m or -F is required",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cmd := newRewriteCommitMsgCmd(nil)
+			cmd.SetArgs(tt.args)
+			err := cmd.Execute()
+			if err == nil {
+				t.Fatalf("expected error containing %q, got nil", tt.wantErr)
+			}
+			if !strings.Contains(err.Error(), tt.wantErr) {
+				t.Fatalf("error %q does not contain %q", err, tt.wantErr)
+			}
+		})
+	}
+}
+
 func TestExtractTrailers(t *testing.T) {
 	tests := []struct {
 		name string

@@ -25,7 +25,7 @@ import (
 )
 
 func newRewriteCommitMsgCmd(c *Command) *cobra.Command {
-	var message string
+	var message, messageFile string
 	cmd := &cobra.Command{
 		Use:   "rewrite-commit-msg [flags] <file>",
 		Short: "Rewrite a commit message file, preserving trailers",
@@ -33,7 +33,12 @@ func newRewriteCommitMsgCmd(c *Command) *cobra.Command {
 
 This command is designed to be used as a GIT_EDITOR when amending commits
 non-interactively. It replaces the message body (everything above the trailers)
-with the new message provided via -m, while preserving all existing trailers.
+with the new message, provided inline via -m or read from a file via -F, while
+preserving all existing trailers.
+
+Prefer -F: the GIT_EDITOR value is parsed by the shell, so a message passed
+inline via -m breaks as soon as it contains a quote character — as ordinary
+prose regularly does.
 
 The new message is inserted verbatim — no reflowing or rewrapping is applied —
 so it must already be hard-wrapped at 72 columns. A message with longer lines
@@ -44,22 +49,34 @@ lines are exempt and may be arbitrarily long.
 
 Usage as GIT_EDITOR:
 
-    GIT_EDITOR="cueckoo rewrite-commit-msg -m 'pkg/foo: new summary
+    GIT_EDITOR="cueckoo rewrite-commit-msg -F /tmp/msg.txt" \
+      git commit --amend
 
-    New description of the change.'" git commit --amend
+where /tmp/msg.txt contains the new summary and body (no trailers).
 
 The file argument is the path to the commit message file, which is passed
 automatically by git when this command is used as GIT_EDITOR.
 `,
 		Args: cobra.ExactArgs(1),
 		RunE: func(_ *cobra.Command, args []string) error {
-			if message == "" {
-				return fmt.Errorf("the -m flag is required")
+			switch {
+			case message != "" && messageFile != "":
+				return fmt.Errorf("-m and -F are mutually exclusive")
+			case message == "" && messageFile == "":
+				return fmt.Errorf("one of -m or -F is required")
+			}
+			if messageFile != "" {
+				data, err := os.ReadFile(messageFile)
+				if err != nil {
+					return fmt.Errorf("reading message file: %w", err)
+				}
+				message = string(data)
 			}
 			return rewriteCommitMsg(args[0], message)
 		},
 	}
 	cmd.Flags().StringVarP(&message, "m", "m", "", "new commit message (replaces everything above trailers)")
+	cmd.Flags().StringVarP(&messageFile, "F", "F", "", "file containing the new commit message (replaces everything above trailers)")
 	return cmd
 }
 
