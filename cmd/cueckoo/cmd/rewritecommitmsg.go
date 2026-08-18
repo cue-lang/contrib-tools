@@ -19,6 +19,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/spf13/cobra"
 )
@@ -33,6 +34,13 @@ func newRewriteCommitMsgCmd(c *Command) *cobra.Command {
 This command is designed to be used as a GIT_EDITOR when amending commits
 non-interactively. It replaces the message body (everything above the trailers)
 with the new message provided via -m, while preserving all existing trailers.
+
+The new message is inserted verbatim — no reflowing or rewrapping is applied —
+so it must already be hard-wrapped at 72 columns. A message with longer lines
+is rejected (non-zero exit) without modifying anything, which makes git abort
+the amend; rewrap the message and retry. The summary (first) line, lines
+containing a URL, "Fixes"/"Updates"/"For" reference lines, and indented quote
+lines are exempt and may be arbitrarily long.
 
 Usage as GIT_EDITOR:
 
@@ -57,8 +65,14 @@ automatically by git when this command is used as GIT_EDITOR.
 
 // rewriteCommitMsg reads the commit message file at path, extracts the
 // trailers using git interpret-trailers, replaces the body with newMessage
-// (hard-wrapped at commitBodyWidth columns), and writes the result back.
+// inserted verbatim, and writes the result back. newMessage must already
+// be hard-wrapped at commitBodyWidth columns (see checkCommitBodyWidth);
+// otherwise an error is returned and the file is left unmodified.
 func rewriteCommitMsg(path, newMessage string) error {
+	if err := checkCommitBodyWidth(newMessage); err != nil {
+		return err
+	}
+
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return fmt.Errorf("reading commit message file: %w", err)
@@ -70,7 +84,7 @@ func rewriteCommitMsg(path, newMessage string) error {
 	}
 
 	var b strings.Builder
-	b.WriteString(strings.TrimRight(wrapCommitBody(newMessage), "\n"))
+	b.WriteString(strings.TrimRight(newMessage, "\n"))
 	b.WriteString("\n")
 	if trailers != "" {
 		b.WriteString("\n")
@@ -91,57 +105,40 @@ func rewriteCommitMsg(path, newMessage string) error {
 // common guidance.
 const commitBodyWidth = 72
 
-// wrapCommitBody hard-wraps the body of a commit message at
-// commitBodyWidth columns. The first line (summary) is always
-// preserved as-is. Blank lines are preserved as paragraph
-// separators. Lines that must not be split — those starting with
-// "Fixes ", "Updates ", or "For " (the issue-reference lines), and
-// any line containing a URL — are emitted verbatim, even if they
-// exceed the wrap width. Indented quote lines — those beginning with a
-// tab or with four or more spaces — are likewise treated as
-// preformatted blocks (e.g. example commands) and emitted verbatim with
-// their leading whitespace intact. All other lines are treated as
-// prose: consecutive non-preserve lines are joined into a paragraph and
-// re-flowed to commitBodyWidth.
-func wrapCommitBody(msg string) string {
-	lines := strings.Split(msg, "\n")
-	if len(lines) == 0 {
-		return msg
-	}
-	out := make([]string, 0, len(lines))
-	out = append(out, lines[0])
-
-	var para []string
-	flush := func() {
-		if len(para) == 0 {
-			return
+// checkCommitBodyWidth verifies that every line of msg fits within
+// commitBodyWidth columns, and returns an error naming each offending
+// line otherwise. It deliberately validates rather than reflows: any
+// reformatting smart enough to preserve deliberate structure (lists,
+// quoted output, aligned text) amounts to a full formatter, and
+// formatting is the caller's job — the guidance already instructs
+// authors to hard-wrap commit messages at 72 columns. The summary
+// (first) line is not checked, and widthCheckExempt lines may be
+// arbitrarily long.
+func checkCommitBodyWidth(msg string) error {
+	var long []string
+	for i, line := range strings.Split(msg, "\n") {
+		if i == 0 || widthCheckExempt(line) {
+			continue
 		}
-		out = append(out, wrapTokens(para, commitBodyWidth)...)
-		para = para[:0]
-	}
-
-	for _, line := range lines[1:] {
-		switch {
-		case line == "":
-			flush()
-			out = append(out, "")
-		case preserveCommitLine(line):
-			flush()
-			out = append(out, line)
-		default:
-			para = append(para, strings.Fields(line)...)
+		if n := utf8.RuneCountInString(line); n > commitBodyWidth {
+			long = append(long, fmt.Sprintf("line %d (%d columns): %s", i+1, n, line))
 		}
 	}
-	flush()
-	return strings.Join(out, "\n")
+	if long != nil {
+		return fmt.Errorf("message is not hard-wrapped at %d columns; rewrap the offending lines and retry:\n%s",
+			commitBodyWidth, strings.Join(long, "\n"))
+	}
+	return nil
 }
 
-// preserveCommitLine reports whether line must be emitted verbatim
-// by wrapCommitBody (no wrapping, no merging with neighbouring
-// lines). See wrapCommitBody.
-func preserveCommitLine(line string) bool {
-	// Indented quote lines (a leading tab, or four or more spaces) are
-	// preformatted blocks such as example commands; keep them verbatim.
+// widthCheckExempt reports whether line is exempt from the
+// commitBodyWidth check performed by checkCommitBodyWidth. Exempt are
+// the lines the guidance requires to stay unsplit even beyond 72
+// columns: "Fixes"/"Updates"/"For" reference lines and any line
+// containing a URL — plus indented quote lines (a leading tab, or four
+// or more spaces), which are preformatted blocks such as example
+// commands.
+func widthCheckExempt(line string) bool {
 	if strings.HasPrefix(line, "\t") || strings.HasPrefix(line, "    ") {
 		return true
 	}
@@ -155,35 +152,6 @@ func preserveCommitLine(line string) bool {
 		return true
 	}
 	return false
-}
-
-// wrapTokens greedy-wraps tokens into lines of at most width
-// columns. A single token longer than width is emitted on its own
-// line and may exceed width.
-func wrapTokens(tokens []string, width int) []string {
-	if len(tokens) == 0 {
-		return nil
-	}
-	var out []string
-	var cur strings.Builder
-	for _, tok := range tokens {
-		if cur.Len() == 0 {
-			cur.WriteString(tok)
-			continue
-		}
-		if cur.Len()+1+len(tok) > width {
-			out = append(out, cur.String())
-			cur.Reset()
-			cur.WriteString(tok)
-			continue
-		}
-		cur.WriteByte(' ')
-		cur.WriteString(tok)
-	}
-	if cur.Len() > 0 {
-		out = append(out, cur.String())
-	}
-	return out
 }
 
 // extractTrailers uses git interpret-trailers --parse to extract trailer

@@ -17,6 +17,7 @@ package cmd
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -76,6 +77,33 @@ New description.
 			want:   "cmd/foo: new summary\n\nNew description.\n\nSigned-off-by: Alice <alice@example.com>\nChange-Id: I1234567890abcdef1234567890abcdef12345678\n",
 		},
 		{
+			name: "numbered list inserted verbatim",
+			orig: `cmd/foo: old summary
+
+Old description.
+
+Change-Id: Iabcdef
+`,
+			newMsg: `cmd/foo: new summary
+
+The steps:
+
+1. First item of the list, with a continuation line that is
+   indented to line up under the item text.
+2. Second item.
+`,
+			want: `cmd/foo: new summary
+
+The steps:
+
+1. First item of the list, with a continuation line that is
+   indented to line up under the item text.
+2. Second item.
+
+Change-Id: Iabcdef
+`,
+		},
+		{
 			name: "message with trailing newlines in new message",
 			orig: `cmd/foo: old summary
 
@@ -109,220 +137,141 @@ Change-Id: Iabcdef
 	}
 }
 
-func TestWrapCommitBody(t *testing.T) {
+func TestCheckCommitBodyWidth(t *testing.T) {
 	tests := []struct {
-		name string
-		in   string
-		want string
+		name    string
+		in      string
+		wantErr []string // substrings; empty means the check must pass
 	}{
 		{
-			name: "summary only",
+			name: "wrapped body passes",
 			in: `
-cmd/foo: short summary
-`[1:],
-			want: `
-cmd/foo: short summary
+cmd/foo: summary
+
+A body wrapped at seventy-two columns.
 `[1:],
 		},
 		{
-			name: "short body unchanged",
+			name: "numbered list left alone",
 			in: `
 cmd/foo: summary
 
-Short body.
-`[1:],
-			want: `
-cmd/foo: summary
+The check:
 
-Short body.
+1. First item of the list, with a continuation line that is
+   indented to line up under the item text.
+2. Second item.
 `[1:],
 		},
 		{
-			name: "long single-line paragraph is wrapped",
+			name: "overlong prose line is an error naming the line",
 			in: `
 cmd/foo: summary
 
-This is a fairly long paragraph that should be wrapped because it exceeds the seventy-two column limit set by the guidance.
+This line is deliberately made much too long so that it exceeds the seventy-two column limit.
 `[1:],
-			want: `
-cmd/foo: summary
-
-This is a fairly long paragraph that should be wrapped because it
-exceeds the seventy-two column limit set by the guidance.
-`[1:],
+			wantErr: []string{"line 3 (93 columns)"},
 		},
 		{
-			name: "pre-wrapped paragraph is re-flowed to same width",
+			name: "all overlong lines are reported",
 			in: `
 cmd/foo: summary
 
-This is a fairly long paragraph
-that should be wrapped because
-it exceeds the seventy-two column
-limit set by the guidance.
+This first line is deliberately made much too long so that it exceeds the limit.
+Short line.
+This third line is also deliberately made much too long so that it exceeds it too.
 `[1:],
-			want: `
-cmd/foo: summary
-
-This is a fairly long paragraph that should be wrapped because it
-exceeds the seventy-two column limit set by the guidance.
-`[1:],
+			wantErr: []string{"line 3 (80 columns)", "line 5 (82 columns)"},
 		},
 		{
-			name: "two-line paragraph where first line just exceeds width is re-flowed",
+			name: "summary line may exceed the limit",
 			in: `
-cmd/foo: summary
-
-line that just barely goes over 72 chars in its length and then is followed by
-almost nothing
-`[1:],
-			want: `
-cmd/foo: summary
-
-line that just barely goes over 72 chars in its length and then is
-followed by almost nothing
-`[1:],
-		},
-		{
-			name: "URL line preserved verbatim",
-			in: `
-cmd/foo: summary
-
-See the discussion at https://cuelang.org/issue/1234567890 for context.
-More prose follows.
-`[1:],
-			want: `
-cmd/foo: summary
-
-See the discussion at https://cuelang.org/issue/1234567890 for context.
-More prose follows.
-`[1:],
-		},
-		{
-			name: "Fixes line preserved even when paragraph wraps around it",
-			in: `
-cmd/foo: summary
-
-A short body.
-
-Fixes cue-lang/cue#4368.
-`[1:],
-			want: `
-cmd/foo: summary
-
-A short body.
-
-Fixes cue-lang/cue#4368.
-`[1:],
-		},
-		{
-			name: "long Fixes line not wrapped",
-			in: `
-cmd/foo: summary
-
-A body.
-
-Fixes cue-lang/some-very-long-repo-name#123456789012345.
-`[1:],
-			want: `
-cmd/foo: summary
-
-A body.
-
-Fixes cue-lang/some-very-long-repo-name#123456789012345.
-`[1:],
-		},
-		{
-			name: "multiple paragraphs",
-			in: `
-cmd/foo: summary
-
-First paragraph that is somewhat long and will need to be wrapped at seventy-two columns.
-
-Second paragraph also reasonably long and likewise requiring a wrap.
-`[1:],
-			want: `
-cmd/foo: summary
-
-First paragraph that is somewhat long and will need to be wrapped at
-seventy-two columns.
-
-Second paragraph also reasonably long and likewise requiring a wrap.
-`[1:],
-		},
-		{
-			name: "summary line never wrapped even if long",
-			in: `
-cmd/foo: a deliberately long summary line that exceeds seventy-two columns by quite a margin
-`[1:],
-			want: `
 cmd/foo: a deliberately long summary line that exceeds seventy-two columns by quite a margin
 `[1:],
 		},
 		{
-			name: "tab-indented quote preserved verbatim",
+			name: "URL line may exceed the limit",
 			in: `
 cmd/foo: summary
 
-Consider the command below:
-
-	cue export --out yaml+indentSeq=false foo.cue
-
-That emits compact YAML.
-`[1:],
-			want: `
-cmd/foo: summary
-
-Consider the command below:
-
-	cue export --out yaml+indentSeq=false foo.cue
-
-That emits compact YAML.
+See https://cuelang.org/issue/1234 which has a very long trailing discussion title after it.
 `[1:],
 		},
 		{
-			name: "four-space-indented quote preserved verbatim",
+			name: "Fixes line may exceed the limit",
 			in: `
 cmd/foo: summary
 
-Consider the command below:
-
-    cue export --out yaml+indentSeq=false foo.cue
-
-That emits compact YAML.
-`[1:],
-			want: `
-cmd/foo: summary
-
-Consider the command below:
-
-    cue export --out yaml+indentSeq=false foo.cue
-
-That emits compact YAML.
+Fixes cue-lang/some-very-long-repo-name#123456789012345 together with more trailing text.
 `[1:],
 		},
 		{
-			name: "indentation under four spaces is reflowed as prose",
+			name: "tab-indented quote may exceed the limit",
 			in: `
 cmd/foo: summary
 
-  this short line keeps under four spaces of indent
+	cue export --out yaml+indentSeq=false a-very-long-file-name-that-goes-on-and-on.cue
 `[1:],
-			want: `
+		},
+		{
+			name: "four-space-indented quote may exceed the limit",
+			in: `
 cmd/foo: summary
 
-this short line keeps under four spaces of indent
+    cue export --out yaml+indentSeq=false a-very-long-file-name-that-goes-on-and-on.cue
+`[1:],
+		},
+		{
+			name: "width is measured in runes not bytes",
+			in: `
+cmd/foo: summary
+
+Dieses Stück enthält Umlaute — ä, ö, ü — und bleibt unter der Grenze.
 `[1:],
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := wrapCommitBody(tt.in)
-			if got != tt.want {
-				t.Errorf("got:\n%s\nwant:\n%s", got, tt.want)
+			err := checkCommitBodyWidth(tt.in)
+			if len(tt.wantErr) == 0 {
+				if err != nil {
+					t.Fatalf("unexpected error: %v", err)
+				}
+				return
+			}
+			if err == nil {
+				t.Fatalf("expected error containing %q, got nil", tt.wantErr)
+			}
+			for _, want := range tt.wantErr {
+				if got := err.Error(); !strings.Contains(got, want) {
+					t.Fatalf("error %q does not contain %q", got, want)
+				}
 			}
 		})
+	}
+}
+
+func TestRewriteCommitMsgRejectsOverlongLines(t *testing.T) {
+	orig := "cmd/foo: old summary\n\nOld description.\n\nChange-Id: Iabcdef\n"
+	path := filepath.Join(t.TempDir(), "COMMIT_EDITMSG")
+	if err := os.WriteFile(path, []byte(orig), 0666); err != nil {
+		t.Fatal(err)
+	}
+	newMsg := "cmd/foo: new summary\n\nA replacement body line that is deliberately made much too long to pass the check.\n"
+	err := rewriteCommitMsg(path, newMsg)
+	if err == nil {
+		t.Fatal("expected an error for an overlong line, got nil")
+	}
+	if !strings.Contains(err.Error(), "not hard-wrapped") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	got, readErr := os.ReadFile(path)
+	if readErr != nil {
+		t.Fatal(readErr)
+	}
+	if string(got) != orig {
+		t.Errorf("commit message file was modified on error:\ngot:\n%s\nwant:\n%s", got, orig)
 	}
 }
 
