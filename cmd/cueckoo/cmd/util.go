@@ -80,6 +80,10 @@ type config struct {
 // loadConfig loads the repository configuration from codereview.cfg, using
 // gh as the key to find the relevant GitHub information
 func loadConfig(ctx context.Context) (*config, error) {
+	if err := requireCueckooRepo(ctx); err != nil {
+		return nil, err
+	}
+
 	var res config
 
 	// Determine git root directory. Note it will have trailing newline
