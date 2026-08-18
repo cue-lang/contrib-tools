@@ -55,6 +55,25 @@ Environment variables:
 	return cmd
 }
 
+// withRepoCheck wraps an MCP tool handler so that the tool refuses to
+// operate unless the server is running within a repository configured to
+// use cueckoo (see requireCueckooRepo). The check runs per tool call, not
+// at server startup: MCP servers are typically registered user-scope and
+// start regardless of which repository, if any, the session is in.
+func withRepoCheck[In any](handler mcp.ToolHandlerFor[In, any]) mcp.ToolHandlerFor[In, any] {
+	return func(ctx context.Context, req *mcp.CallToolRequest, input In) (*mcp.CallToolResult, any, error) {
+		if err := requireCueckooRepo(ctx); err != nil {
+			return &mcp.CallToolResult{
+				Content: []mcp.Content{
+					&mcp.TextContent{Text: fmt.Sprintf("error: %v", err)},
+				},
+				IsError: true,
+			}, nil, nil
+		}
+		return handler(ctx, req, input)
+	}
+}
+
 func runMCP(ctx context.Context) error {
 	server := mcp.NewServer(&mcp.Implementation{
 		Name:    "cueckoo",
@@ -69,7 +88,7 @@ Takes a Slack message URL (e.g. https://cuelang.slack.com/archives/C012UU8B72M/p
 and returns all messages in that thread, with user IDs resolved to display names.
 
 Requires SLACK_TOKEN environment variable.`,
-	}, handleSlackThread)
+	}, withRepoCheck(handleSlackThread))
 
 	mcp.AddTool(server, &mcp.Tool{
 		Name: "discord_thread",
@@ -79,7 +98,7 @@ Takes a Discord message URL (e.g. https://discord.com/channels/95393959659242402
 and returns all messages in that thread, with user IDs resolved to display names.
 
 Requires DISCORD_TOKEN environment variable.`,
-	}, handleDiscordThread)
+	}, withRepoCheck(handleDiscordThread))
 
 	mcp.AddTool(server, &mcp.Tool{
 		Name: "gerrit_comments",
@@ -98,7 +117,7 @@ commit message itself, not a source file. If all threads are resolved, report th
 action is needed.
 
 Set unresolved_only to true to show only unresolved threads.`,
-	}, handleGerritComments)
+	}, withRepoCheck(handleGerritComments))
 
 	mcp.AddTool(server, &mcp.Tool{
 		Name: "trybot_result",
@@ -115,7 +134,7 @@ Actions and extracts the error output. Use this to understand why CI failed
 and what needs to be fixed.
 
 Requires the gh CLI to be installed and authenticated.`,
-	}, handleTrybotResult)
+	}, withRepoCheck(handleTrybotResult))
 
 	mcp.AddTool(server, &mcp.Tool{
 		Name: "gerrit_change",
@@ -131,7 +150,7 @@ The change argument can be:
   cl:<number>          — CL number, e.g. cl:1233920
   changeid:<id>        — Change-Id, e.g. changeid:Ia15e97465869aa18ba2b8c9795cec18f438d7b76
   git:<ref>            — any git ref, e.g. git:HEAD`,
-	}, handleGerritChange)
+	}, withRepoCheck(handleGerritChange))
 
 	mcp.AddTool(server, &mcp.Tool{
 		Name: "gerrit_draft_comment",
@@ -160,7 +179,7 @@ Set line to 0 to post a file-level comment (not attached to a specific line).
 Comments default to unresolved (requiring action from the CL author). Set
 resolved to true for FYI or informational comments that do not require
 a response.`,
-	}, handleGerritDraftComment)
+	}, withRepoCheck(handleGerritDraftComment))
 
 	mcp.AddTool(server, &mcp.Tool{
 		Name: "gerrit_reply",
@@ -185,7 +204,7 @@ gerrit_comments output (e.g. id:abc123). Pass the ID without the "id:" prefix.
 
 The response includes the draft ID, which can be used with gerrit_update_draft
 to edit the draft or gerrit_delete_draft to remove it.`,
-	}, handleGerritReply)
+	}, withRepoCheck(handleGerritReply))
 
 	mcp.AddTool(server, &mcp.Tool{
 		Name: "gerrit_update_draft",
@@ -199,7 +218,7 @@ The change argument must use one of these prefixed formats:
   cl:<number>        — CL number, e.g. cl:1233340
   changeid:<id>      — Change-Id, e.g. changeid:Ia15e97465869aa18ba2b8c9795cec18f438d7b76
   git:<ref>          — any git ref (commit SHA, branch, tag, HEAD, HEAD~2, etc.), e.g. git:HEAD`,
-	}, handleGerritUpdateDraft)
+	}, withRepoCheck(handleGerritUpdateDraft))
 
 	mcp.AddTool(server, &mcp.Tool{
 		Name: "gerrit_delete_draft",
@@ -213,7 +232,7 @@ The change argument must use one of these prefixed formats:
   cl:<number>        — CL number, e.g. cl:1233340
   changeid:<id>      — Change-Id, e.g. changeid:Ia15e97465869aa18ba2b8c9795cec18f438d7b76
   git:<ref>          — any git ref (commit SHA, branch, tag, HEAD, HEAD~2, etc.), e.g. git:HEAD`,
-	}, handleGerritDeleteDraft)
+	}, withRepoCheck(handleGerritDeleteDraft))
 
 	return server.Run(ctx, &mcp.StdioTransport{})
 }
