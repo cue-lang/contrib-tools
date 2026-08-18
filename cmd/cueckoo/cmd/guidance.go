@@ -426,12 +426,12 @@ preceding commit from the unstaged (extracted) files, then
 git commit -c ORIG_HEAD commits whatever was left staged — the
 original work with its Change-Id preserved.
 
-To drive the -c flag non-interactively, use
+To drive the -c flag non-interactively, write the new message
+(summary and body, no trailers) to a file and use
 cueckoo rewrite-commit-msg as GIT_EDITOR:
 
-    GIT_EDITOR="cueckoo rewrite-commit-msg -m 'cmd/foo: narrower summary
-
-    Updated description.'" git commit -c ORIG_HEAD
+    GIT_EDITOR="cueckoo rewrite-commit-msg -F /tmp/msg.txt" \
+      git commit -c ORIG_HEAD
 
 When done editing, resume the rebase:
 
@@ -457,18 +457,21 @@ To keep the existing message unchanged (code-only edit):
     git add <files>
     git commit --amend --no-edit
 
-To amend both code and message together, use
+To amend both code and message together, write the new message
+(summary and body, no trailers) to a file and use
 cueckoo rewrite-commit-msg as GIT_EDITOR:
 
     git add <files>
-    GIT_EDITOR="cueckoo rewrite-commit-msg -m 'cmd/foo: updated summary
+    GIT_EDITOR="cueckoo rewrite-commit-msg -F /tmp/msg.txt" \
+      git commit --amend
 
-    New description of the change.'" git commit --amend
-
-cueckoo rewrite-commit-msg replaces the message body with the -m
-argument while preserving all trailers (Change-Id, Signed-off-by,
-etc.). This is safe for any message rewrite — simple summary
-changes or complete rewrites. The message is inserted verbatim: no
+cueckoo rewrite-commit-msg replaces the message body with the file's
+content while preserving all trailers (Change-Id, Signed-off-by,
+etc.). Always pass the message via -F rather than the inline -m
+flag: the GIT_EDITOR value is parsed by the shell, so an inline
+message breaks on the first quote character it contains. This is
+safe for any message rewrite — simple summary changes or complete
+rewrites. The message is inserted verbatim: no
 reflowing or rewrapping is applied, so it must already be
 hard-wrapped at 72 columns per the "Commit Messages" section above.
 If any line is longer — other than the summary line and the lines
@@ -486,7 +489,11 @@ IMPORTANT: avoid git commit --amend -m "..." and
 git commit --amend -F <file> when the commit has a Change-Id.
 Both -m and -F replace the entire message, and the codereview
 hooks will generate a new Change-Id — orphaning the original CL.
-Use cueckoo rewrite-commit-msg instead.
+Use cueckoo rewrite-commit-msg instead. Do not confuse git's own
+-F flag with cueckoo rewrite-commit-msg -F: the former replaces the
+entire message including trailers, while the latter (as GIT_EDITOR)
+reads only the replacement body from the file and preserves the
+trailers.
 
 After amending, resume the rebase with GIT_EDITOR=true as above.
 
@@ -540,11 +547,12 @@ rewords only the specified commits:
     git codereview reword abc123       # reword a specific commit
 
 It invokes GIT_EDITOR for each commit message. To drive it
-non-interactively, use cueckoo rewrite-commit-msg as GIT_EDITOR:
+non-interactively, write the new message (summary and body, no
+trailers) to a file and use cueckoo rewrite-commit-msg as
+GIT_EDITOR:
 
-    GIT_EDITOR="cueckoo rewrite-commit-msg -m 'cmd/foo: new summary
-
-    New description.'" git codereview reword abc123
+    GIT_EDITOR="cueckoo rewrite-commit-msg -F /tmp/msg.txt" \
+      git codereview reword abc123
 
 For minor edits (e.g. just the summary line), sed also works:
 
