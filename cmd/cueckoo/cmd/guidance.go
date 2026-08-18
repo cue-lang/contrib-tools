@@ -468,7 +468,13 @@ cueckoo rewrite-commit-msg as GIT_EDITOR:
 cueckoo rewrite-commit-msg replaces the message body with the -m
 argument while preserving all trailers (Change-Id, Signed-off-by,
 etc.). This is safe for any message rewrite — simple summary
-changes or complete rewrites.
+changes or complete rewrites. The message is inserted verbatim: no
+reflowing or rewrapping is applied, so it must already be
+hard-wrapped at 72 columns per the "Commit Messages" section above.
+If any line is longer — other than the summary line and the lines
+that section requires to stay unsplit (URLs, reference lines) plus
+indented quote lines — the command exits non-zero without modifying
+anything, and git aborts the amend; rewrap the message and retry.
 
 For minor edits (e.g. just the summary line), sed is also safe:
 
